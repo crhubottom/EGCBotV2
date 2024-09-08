@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:    
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          repository: crhubottom/EGCBOTV2
+          repository: ${{ github.repository }}
           ref: main  # or specify the branch or tag to pull from
 
       - name: Build and push combined Docker image
@@ -23,5 +23,5 @@ jobs:
           file: ./.docker/Dockerfile
           push: false
           tags: |
-            crhubottom/EGCBOTV2:latest
-            crhubottom/EGCBOTV2:main
+            crhubottom/egcbotv2:latest
+            crhubottom/egcbotv2:main
