@@ -20,7 +20,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./.docker/Dockerfile
+          file: ./Dockerfile
           push: false
           tags: |
             crhubottom/egcbotv2:latest
