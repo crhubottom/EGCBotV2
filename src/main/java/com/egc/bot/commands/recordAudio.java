@@ -73,7 +73,7 @@ public static User u;
                    "Respond normally for anything else.","gpt-4o-mini");
             System.out.println(out);
             if(out.startsWith("play ")){
-                String name=out.substring(4,out.lastIndexOf(","));
+                String name=out.substring(4);
                 out="Playing "+name;
                 try {
                     new URL(name);
