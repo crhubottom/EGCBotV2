@@ -14,33 +14,29 @@ public class getMicAudio {
         recievedBytes.clear();
         //man.openAudioConnection(client.getVoiceChannelById(keys.get("MAIN_VC_ID")));
         record=true;
+        System.out.println(recievedBytes.size());
         while (record) {
             Thread.onSpinWait();
         }
       //System.out.println("Resumed");
-
-            try {
-                int size = 0;
-                for (byte[] bs : recievedBytes) {
-                    size += bs.length;
-                }
-                System.out.println("size: "+size);
-
-                byte[] decodedData = new byte[size];
-                int i = 0;
-                for (byte[] bs : recievedBytes) {
-                    for (byte b : bs) {
-                        decodedData[i++] = b;
-
-                    }
-                }
-                getWavFile(decodedData);
-            } catch (IOException | OutOfMemoryError e) {
-                e.printStackTrace();
+        System.out.println(recievedBytes.size());
+        try {
+            int size=0;
+            for (byte[] bs : recievedBytes) {
+                size+=bs.length;
             }
-            //man.openAudioConnection(client.getVoiceChannelById(keys.get("MAIN_VC_ID")));
+            byte[] decodedData=new byte[size];
+            int i=0;
+            for (byte[] bs : recievedBytes) {
+                for (int j = 0; j < bs.length; j++) {
+                    decodedData[i++]=bs[j];
+                }
+            }
+            getWavFile(decodedData);
+        } catch (IOException|OutOfMemoryError e) {
+            e.printStackTrace();
         }
-
+}
     public void setUp(){
         //System.out.println(recievedBytes.size());
         recievedBytes.clear();
