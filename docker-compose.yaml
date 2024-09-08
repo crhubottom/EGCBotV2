@@ -1,0 +1,48 @@
+services:
+  egcbot:
+    container_name: egcbot
+    image: egcbot:latest
+    restart: unless-stopped
+    build:
+      dockerfile: Dockerfile
+    depends_on:
+      - mysql
+    environment:
+      - DISCORD_KEY=${DISCORD_KEY}
+      #- OPENAI_KEY=sk-proj-P5cL2q:wONtyrhK6sMigzOT3BlbkFJ30O0iiRNxuDdvJ8DxrDU
+      - OPENAI_KEY=${OPENAI_KEY}
+      - DB_USER=${DB_USER}
+      - DB_PW=${DB_PW}
+      - GUILD=${GUILD}
+      - TEST_CHANNEL=${TEST_CHANNEL}
+      - ROCKET_ALERT_CHANNEL=${ROCKET_ALERT_CHANNEL}
+      - ROCKET_PING_ROLE_ID=${ROCKET_PING_ROLE_ID}
+      - MAIN_VC_ID=${MAIN_VC_ID}
+      - BOT_ID=${BOT_ID}
+      - salary_time=${salary_time}
+      - DB_URL=${DB_URL}
+      - TESTING_MODE=${TESTING_MODE}
+      - joke=${joke}
+  mysql:
+    image: mysql:8.0.39
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 4702
+    volumes:
+      - ./data:/var/lib/mysql
+    #ports:
+    #  3306:3306
+  restarter:
+    image: docker:cli
+    restart: unless-stopped
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock"]
+    entrypoint: ["/bin/sh","-c"]
+    command:
+      - |
+        while true; do
+          if [ "$$(date +'%H:%M')" = '00:05' ]; then
+            docker restart egcbot
+          fi
+          sleep 60
+        done
+      
