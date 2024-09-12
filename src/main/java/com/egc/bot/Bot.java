@@ -123,7 +123,7 @@ public class Bot{
                 Command.slash("addtip", "add a game tip", new addTip())
                         .addOption(OptionType.STRING, "game", "game name")
                         .addOption(OptionType.STRING, "tip", "tip"),
-                Command.slash("record", "Record audio for 5 seconds", new recordAudio()),
+                Command.slash("record", "Use your voice to command the bot.", new recordAudio()),
                 Command.slash("nextlaunch", "Displays the next rocket launch", new nextLaunch())
                         .addOption(OptionType.STRING, "spacex", "SpaceX only (t/f)"),
                 Command.slash("list", "Lists the tips", new list())

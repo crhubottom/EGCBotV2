@@ -62,7 +62,7 @@ public class AudioReceiveHandler implements net.dv8tion.jda.api.audio.AudioRecei
             //System.out.println("handleUserAudio: " + userAudio.getUser().getEffectiveName());
             //System.out.println("test");
             try {
-                if(Arrays.toString(userAudio.getAudioData(1)).equals(silence)) {
+               /* if(Arrays.toString(userAudio.getAudioData(1)).equals(silence)) {
                     //System.out.println("silence");
                     silenceCounter++;
                     if(silenceCounter==9){
@@ -72,6 +72,8 @@ public class AudioReceiveHandler implements net.dv8tion.jda.api.audio.AudioRecei
                 }else{
                     silenceCounter=0;
                 }
+
+                */
                 recievedBytes.add(userAudio.getAudioData(1));
                //System.out.println("Counter: "+silenceCounter);
             } catch (OutOfMemoryError e) {
