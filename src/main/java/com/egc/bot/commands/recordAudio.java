@@ -55,6 +55,7 @@ public static User u;
         eb.setTitle("Voice Request");
         eb.setDescription("Ready to record.");
         eb.setColor(Color.blue);
+
         ctx.getHook().sendMessageEmbeds(eb.build()).addActionRow(
                 net.dv8tion.jda.api.interactions.components.buttons.Button.success("record", "Start Recording")).queue();
 
