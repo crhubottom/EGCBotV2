@@ -133,7 +133,7 @@ public class tipDB {
         return ss;
     }
 
-    public static String getRandomTip(String game) {
+    public static String getRandomTip(String game, String players) {
         int ran1 = (int) (Math.random() * 2);
         if (ran1 == 1) {
             PreparedStatement ps;
@@ -145,6 +145,10 @@ public class tipDB {
                 int rows = rs.getRow();
                 System.out.println(rows);
                 if (rows == 0) {
+                    ran1= (int) (Math.random() * 2);
+                    if(ran1==1){
+                        return AIc.gptCallWithSystem("Game: "+game+"\n Players: "+players,"Make fun of the players playing the listed game. Also make fun of the game. Be harsh and rude. One sentence max.","gpt-4o-mini");
+                    }
                     return AIc.gptCall("give me a short funny or intentionally bad and wrong tip about "+game+". Say nothing but the tip.","gpt-4o-mini");
                 }
                 rs.first();
@@ -160,6 +164,11 @@ public class tipDB {
             }
 
         }else{
+            ran1= (int) (Math.random() * 2);
+            if(ran1==1){
+                return AIc.gptCallWithSystem("Game: "+game+"\n Players: "+players,"Make fun of the players playing the listed game. Also make fun of the game. Be harsh and rude. One sentence max.","gpt-4o-mini");
+
+            }
             return AIc.gptCall("give me a short funny or intentionally bad and wrong tip about "+game+". Say nothing but the tip.","gpt-4o-mini");
         }
 

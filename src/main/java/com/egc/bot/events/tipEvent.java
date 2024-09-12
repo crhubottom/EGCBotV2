@@ -43,7 +43,9 @@ public class tipEvent {
         ArrayList<String> ties = new ArrayList<>();
         List<Member> a = client.getGuildById(guild).getVoiceChannelById(vcID.getId()).getMembers();
         ArrayList<String> ls = new ArrayList<>();
+        StringBuilder players = new StringBuilder();
         for (Member member : a) {
+            players.append(member.getEffectiveName()).append(", ");
             System.out.println(member.getActivities());
             if (!member.getActivities().isEmpty()) {
                 String game = member.getActivities().get(0).toString();
@@ -80,10 +82,10 @@ public class tipEvent {
             System.out.println("tie: "+ties);
             int rand= (int)(Math.random()*ties.size());
             System.out.println("rand: "+rand);
-            tip = tipDB.getRandomTip(ties.get(rand).toLowerCase().replaceAll("\\s", ""));
+            tip = tipDB.getRandomTip(ties.get(rand).toLowerCase().replaceAll("\\s", ""),players.toString());
             topGame=ties.get(rand);
         }else{
-            tip = tipDB.getRandomTip(topGame.toLowerCase().replaceAll("\\s", ""));
+            tip = tipDB.getRandomTip(topGame.toLowerCase().replaceAll("\\s", ""),players.toString());
 
         }
 
