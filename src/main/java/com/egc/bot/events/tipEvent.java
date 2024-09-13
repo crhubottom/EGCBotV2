@@ -45,17 +45,20 @@ public class tipEvent {
         ArrayList<String> ls = new ArrayList<>();
         StringBuilder players = new StringBuilder();
         for (Member member : a) {
-            players.append(member.getEffectiveName()).append(", ");
-            System.out.println(member.getActivities());
-            if (!member.getActivities().isEmpty()) {
-                String game = member.getActivities().get(0).toString();
-                if(game.contains("RichPresence:")) {
-                    ls.add(game.substring(game.indexOf("RichPresence:") + 13, game.indexOf("(",game.indexOf("RichPresence:")+13)));
-                }
-                if(game.contains("[PLAYING]:")) {
-                    System.out.println(game);
-                    System.out.println(game.substring(game.indexOf("[PLAYING]:") + 10));
-                    ls.add(game.substring(game.indexOf("[PLAYING]:") + 10));
+
+            if(!member.getUser().isBot()) {
+                players.append(member.getEffectiveName()).append(", ");
+                System.out.println(member.getActivities());
+                if (!member.getActivities().isEmpty()) {
+                    String game = member.getActivities().get(0).toString();
+                    if (game.contains("RichPresence:")) {
+                        ls.add(game.substring(game.indexOf("RichPresence:") + 13, game.indexOf("(", game.indexOf("RichPresence:") + 13)));
+                    }
+                    if (game.contains("[PLAYING]:")) {
+                        System.out.println(game);
+                        System.out.println(game.substring(game.indexOf("[PLAYING]:") + 10));
+                        ls.add(game.substring(game.indexOf("[PLAYING]:") + 10));
+                    }
                 }
             }
         }
