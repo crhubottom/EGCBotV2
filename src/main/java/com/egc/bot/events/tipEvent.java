@@ -67,6 +67,7 @@ public class tipEvent {
             System.out.println("life");
         }
         topGame = ls.get(0);
+
         for (int y = 0; y < ls.size(); y++) {
             gameCount = Collections.frequency(ls, ls.get(y));
             if (gameCount > playCount) {
@@ -85,9 +86,21 @@ public class tipEvent {
             System.out.println("tie: "+ties);
             int rand= (int)(Math.random()*ties.size());
             System.out.println("rand: "+rand);
-            tip = tipDB.getRandomTip(ties.get(rand).toLowerCase().replaceAll("\\s", ""),players.toString());
             topGame=ties.get(rand);
+            for (Member member : a) {
+
+                if (!member.getUser().isBot()&&member.getActivities().get(0).toString().toLowerCase().contains(topGame.toLowerCase())) {
+                    players.append(member.getEffectiveName()).append(", ");
+                }
+            }
+            tip = tipDB.getRandomTip(topGame.toLowerCase().replaceAll("\\s", ""),players.toString());
+
         }else{
+            for (Member member : a) {
+                if (!member.getUser().isBot()&&member.getActivities().get(0).toString().toLowerCase().contains(topGame.toLowerCase())) {
+                    players.append(member.getEffectiveName()).append(", ");
+                }
+            }
             tip = tipDB.getRandomTip(topGame.toLowerCase().replaceAll("\\s", ""),players.toString());
 
         }
