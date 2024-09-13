@@ -47,7 +47,6 @@ public class tipEvent {
         for (Member member : a) {
 
             if(!member.getUser().isBot()) {
-                players.append(member.getEffectiveName()).append(", ");
                 System.out.println(member.getActivities());
                 if (!member.getActivities().isEmpty()) {
                     String game = member.getActivities().get(0).toString();
