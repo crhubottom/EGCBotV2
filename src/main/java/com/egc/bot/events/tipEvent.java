@@ -88,22 +88,24 @@ public class tipEvent {
             System.out.println("rand: "+rand);
             topGame=ties.get(rand);
             for (Member member : a) {
-
-                if (!member.getUser().isBot()&&member.getActivities().get(0).toString().toLowerCase().contains(topGame.toLowerCase())) {
-                    players.append(member.getEffectiveName()).append(", ");
+                if (!member.getActivities().isEmpty()) {
+                    if (!member.getUser().isBot() && member.getActivities().get(0).toString().toLowerCase().contains(topGame.toLowerCase())) {
+                        players.append(member.getEffectiveName()).append(", ");
+                    }
                 }
             }
-            tip = tipDB.getRandomTip(topGame.toLowerCase().replaceAll("\\s", ""),players.toString());
 
         }else{
             for (Member member : a) {
-                if (!member.getUser().isBot()&&member.getActivities().get(0).toString().toLowerCase().contains(topGame.toLowerCase())) {
-                    players.append(member.getEffectiveName()).append(", ");
+                if (!member.getActivities().isEmpty()) {
+                    if (!member.getUser().isBot() && member.getActivities().get(0).toString().toLowerCase().contains(topGame.toLowerCase())) {
+                        players.append(member.getEffectiveName()).append(", ");
+                    }
                 }
             }
-            tip = tipDB.getRandomTip(topGame.toLowerCase().replaceAll("\\s", ""),players.toString());
 
         }
+        tip = tipDB.getRandomTip(topGame.toLowerCase().replaceAll("\\s", ""),players.toString());
 
         if (Objects.equals(tip, "empty")) {
             System.out.println("No tips for current game "+topGame);
