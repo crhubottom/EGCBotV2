@@ -1,5 +1,6 @@
 package com.egc.bot;
 
+import com.egc.bot.database.settingsDB;
 import io.github.stefanbratanov.jvm.openai.OpenAIException;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
@@ -145,7 +146,7 @@ public class respond extends ListenerAdapter {
 
                 int ran = (int) (Math.random() * 40);
                 System.out.println(ran);
-                if ((ran == 5 && randReply)) {
+                if ((ran == 5 && settingsDB.getState("randReply"))) {
                     TextChannel tc = event.getChannel().asTextChannel();
                     System.out.println(tc.getName());
                     MessageHistory messagesHistory = tc.getHistoryBefore(tc.getLatestMessageId(), 40).complete();
@@ -172,7 +173,7 @@ public class respond extends ListenerAdapter {
                     if (event.getMessage().getAuthor().getName().equals("frankie4sd")) {
                         count++;
                         int rand_int1 = rand.nextInt(30);
-                        if (rand_int1 == 3 && frankieReply) {
+                        if (rand_int1 == 3 && settingsDB.getState("frankie")) {
                             event.getMessage().reply("https://tenor.com/view/shh-gif-27680056").queue(); // call queue
                         }
                     }
