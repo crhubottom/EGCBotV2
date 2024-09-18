@@ -25,7 +25,7 @@ public class settingsDB {
                     ps2 = Database.con.prepareStatement("insert into settings values(?,?)");
                     ps2.setString(1, setting);
                     ps2.setBoolean(2, true);
-                    ps2.executeQuery();
+                    ps2.execute();
                 }else{
                     System.out.println(setting+" found");
                 }
@@ -71,7 +71,7 @@ public class settingsDB {
             ps = Database.con.prepareStatement("update settings set state = ? where name = ?");
             ps.setBoolean(1, !oldState);
             ps.setString(2, settingName.toLowerCase());
-             ps.executeQuery();
+             ps.execute();
         } catch (SQLException e) {
             System.err.println("ERROR: Something went wrong with the database.");
             return "db error, please fix me Chase";
@@ -94,7 +94,7 @@ public class settingsDB {
                 PreparedStatement ps1 = Database.con.prepareStatement("update settings set state = ? where name=?");
                 ps1.setBoolean(1, !oldState);
                 ps1.setString(2, rs.getString("name"));
-                ps1.executeQuery();
+                ps1.execute();
             }
 
         } catch (SQLException e) {
