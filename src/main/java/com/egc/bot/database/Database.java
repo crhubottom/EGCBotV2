@@ -37,9 +37,12 @@ public class Database {
         statement.execute(
                 "CREATE TABLE IF NOT EXISTS users(id BIGINT NOT NULL ,date datetime,PRIMARY KEY (id));");
         statement.execute(
+                "CREATE TABLE IF NOT EXISTS settings(name varchar(100) ,state boolean, PRIMARY KEY (name));");
+        statement.execute(
                 "CREATE TABLE IF NOT EXISTS inventory(num int NOT NULL AUTO_INCREMENT,id BIGINT, item varchar(100),count int, PRIMARY KEY (num));");
         statement.execute(
                 "CREATE TABLE IF NOT EXISTS launches(mission varchar(150) NOT NULL,LSP varchar(100), pad varchar(100),location varchar(100),net varchar(100),image varchar(200),`precision` varchar(150), primary key (mission));");
     }
 
 }
+

@@ -52,7 +52,6 @@ public class Bot{
     public static storeDB store= new storeDB();
     public static boolean randReply = true;
     public static boolean frankieReply = true;
-    public static boolean voiceTip = true;
     public static boolean firstRun = true;
     public static rocketEvent rocket = new rocketEvent();
     public static volatile boolean record=false;
@@ -146,6 +145,7 @@ public class Bot{
                         .addOption(OptionType.STRING, "status", "the content")
         ).queue();
         client.awaitReady();
+        settingsDB.initialize();
         client.getPresence().setActivity(Activity.watching("The World Burn"));
         if(Objects.equals(keys.get("TESTING_MODE"), "FALSE")) {
             System.out.println("matches");
@@ -186,7 +186,7 @@ public class Bot{
         client.getGuildById(guildID).getTextChannelById(keys.get("TEST_CHANNEL")).sendMessage("EGCbot is Online. " + timeStamp).queue();
         Runnable drawRunnable = () -> {
             int ran = (int) (Math.random() * 30);
-            if (ran == 3 && voiceTip) {
+            if (ran == 3 && settingsDB.getState("voiceTip")) {
                 System.out.println("tipEvent");
                 tipEvent tip = new tipEvent();
                 tip.tip();
