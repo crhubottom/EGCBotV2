@@ -113,7 +113,7 @@ public class respond extends ListenerAdapter {
                 List<Message> messages = messagesHistory.getRetrievedHistory();
                 StringBuilder ss = new StringBuilder();
                 for (int i = messages.size() - 1; i >= 0; i--) {
-                    if (!messages.get(i).getContentDisplay().isEmpty()) {
+                    if (!messages.get(i).getContentDisplay().isEmpty()&&messages.get(i).getMember()!=null) {
                         ss.append("\n").append(i+1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
                     }
                 }
@@ -152,13 +152,13 @@ public class respond extends ListenerAdapter {
                     List<Message> messages = messagesHistory.getRetrievedHistory();
                     StringBuilder ss = new StringBuilder();
                     for (int i = messages.size() - 1; i >= 0; i--) {
-                        if (!messages.get(i).getContentDisplay().isEmpty()) {
+                        if (!messages.get(i).getContentDisplay().isEmpty()&&messages.get(i).getMember()!=null) {
                             ss.append("\n").append(i+1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
                         }
                     }
                     tc.getHistory().retrievePast(1).queue(msgs -> {
                             System.out.println(msgs.get(0).getContentDisplay());
-                            if (!msgs.get(0).getContentDisplay().isEmpty()) {
+                            if (!msgs.get(0).getContentDisplay().isEmpty()&&msgs.get(0).getMember()!=null) {
 
                                     //ss.append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
                                     ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
