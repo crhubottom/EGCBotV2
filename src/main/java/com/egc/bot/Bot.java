@@ -145,6 +145,7 @@ public class Bot{
                         .addOption(OptionType.STRING, "status", "the content")
         ).queue();
         client.awaitReady();
+        settingsDB.initialize();
         client.getPresence().setActivity(Activity.watching("The World Burn"));
         if(Objects.equals(keys.get("TESTING_MODE"), "FALSE")) {
             System.out.println("matches");

@@ -1,10 +1,39 @@
 package com.egc.bot.database;
 
+import org.checkerframework.checker.units.qual.A;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 public class settingsDB {
+    public static void initialize(){
+        ArrayList<String> settings = new ArrayList<>();
+        settings.add("frankie");
+        settings.add("randReply");
+        settings.add("voiceTip");
+        PreparedStatement ps;
+        try {
+            for (String setting : settings) {
+                ps = Database.con.prepareStatement("SELECT name FROM settings WHERE name = ?");
+                ps.setString(1, setting);
+                ResultSet rs = ps.executeQuery();
+                if (!rs.next()) {
+                    System.out.println(setting+" not found, adding");
+                    PreparedStatement ps2;
+                    ps2 = Database.con.prepareStatement("insert into settings values(?,?)");
+                    ps2.setString(1, setting);
+                    ps2.setBoolean(2, true);
+                    ps2.executeQuery();
+                }else{
+                    System.out.println(setting+" found");
+                }
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
     public static boolean getState(String settingName) {
 
         StringBuilder ss = new StringBuilder();

@@ -37,7 +37,7 @@ public class Database {
         statement.execute(
                 "CREATE TABLE IF NOT EXISTS users(id BIGINT NOT NULL ,date datetime,PRIMARY KEY (id));");
         statement.execute(
-                "CREATE TABLE IF NOT EXISTS settings(name varchar(100) ,state boolean,PRIMARY KEY (name));");
+                "CREATE TABLE IF NOT EXISTS settings(name varchar(100) ,state boolean, PRIMARY KEY (name));");
         statement.execute(
                 "CREATE TABLE IF NOT EXISTS inventory(num int NOT NULL AUTO_INCREMENT,id BIGINT, item varchar(100),count int, PRIMARY KEY (num));");
         statement.execute(
@@ -45,3 +45,4 @@ public class Database {
     }
 
 }
+
