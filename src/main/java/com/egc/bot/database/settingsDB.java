@@ -67,6 +67,7 @@ public class settingsDB {
            if(isMyResultSetEmpty(rs)){
                return "Setting not found.";
            }else{
+               rs.next();
                oldState=rs.getBoolean("state");
            }
 
