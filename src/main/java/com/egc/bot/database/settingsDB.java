@@ -19,7 +19,7 @@ public class settingsDB {
                 ps = Database.con.prepareStatement("SELECT name FROM settings WHERE name = ?");
                 ps.setString(1, setting);
                 ResultSet rs = ps.executeQuery();
-                if (!rs.next()) {
+                if (isMyResultSetEmpty(rs)) {
                     System.out.println(setting+" not found, adding");
                     PreparedStatement ps2;
                     ps2 = Database.con.prepareStatement("insert into settings values(?,?)");
@@ -34,6 +34,7 @@ public class settingsDB {
             e.printStackTrace();
         }
     }
+
     public static boolean getState(String settingName) {
 
         StringBuilder ss = new StringBuilder();
@@ -56,24 +57,25 @@ public class settingsDB {
 
         StringBuilder ss = new StringBuilder();
         PreparedStatement ps;
-        boolean found = false;
-        boolean oldState=false;
+
+        PreparedStatement ps2;
+        boolean oldState;
         try {
             ps = Database.con.prepareStatement("select name from settings where name=?");
-            ps.setString(1, settingName.toLowerCase());
+            ps.setString(1, settingName);
            ResultSet rs = ps.executeQuery();
-           if(!rs.next()){
+           if(isMyResultSetEmpty(rs)){
                return "Setting not found.";
            }else{
                oldState=rs.getBoolean("state");
            }
 
-            ps = Database.con.prepareStatement("update settings set state = ? where name = ?");
-            ps.setBoolean(1, !oldState);
-            ps.setString(2, settingName.toLowerCase());
-             ps.execute();
+            ps2 = Database.con.prepareStatement("update settings set state = ? where name = ?");
+            ps2.setBoolean(1, !oldState);
+            ps2.setString(2, settingName);
+             ps2.execute();
         } catch (SQLException e) {
-            System.err.println("ERROR: Something went wrong with the database.");
+            e.printStackTrace();
             return "db error, please fix me Chase";
         }
 
@@ -90,6 +92,7 @@ public class settingsDB {
             ps = Database.con.prepareStatement("select * from settings");
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
+                oldState=rs.getBoolean("state");
                 out.append(rs.getString("name")).append(": ").append(rs.getBoolean("state")).append(" -> ").append(!rs.getBoolean("state")).append("\n");
                 PreparedStatement ps1 = Database.con.prepareStatement("update settings set state = ? where name=?");
                 ps1.setBoolean(1, !oldState);
@@ -104,5 +107,7 @@ public class settingsDB {
 
         return "All settings toggled.\n"+out;
     }
-
+    public static boolean isMyResultSetEmpty(ResultSet rs) throws SQLException {
+        return (!rs.isBeforeFirst() && rs.getRow() == 0);
+    }
 }
