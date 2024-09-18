@@ -61,7 +61,7 @@ public class settingsDB {
         PreparedStatement ps2;
         boolean oldState;
         try {
-            ps = Database.con.prepareStatement("select name from settings where name=?");
+            ps = Database.con.prepareStatement("select * from settings where name=?");
             ps.setString(1, settingName);
            ResultSet rs = ps.executeQuery();
            if(isMyResultSetEmpty(rs)){
