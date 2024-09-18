@@ -1,6 +1,5 @@
                                     A multipurpose Discord bot for my personal server.
                                               Not intended for distribution
-                                                    README IS OUTDATED
 
                                                       Features
 
@@ -20,8 +19,9 @@ The bot can send and receive messages through OpenAI's API.
  The bot will detect if users are in a voice chat, and then detect if a common game is being played. 
          If so, users may use a command to receive a "tip" from the bot about that certain game. 
          There is a 50% chance it will pull this tip from a user-provided list of game tips stored in a MySQL database, otherwise, it will query the API for an AI-made tip. 
-         The bot will display this tip in chat but also say it in voice chat using Google's text-to-speech API.
-
+         The bot will display this tip in chat and say it in voice chat using OpenAI's text-to-speech model.
+Uses OPENAI's Whisper model to convert speech to text, used in multiple commands. 
+It can run commands and code based on what is said through speech-to-text and uses prompt engineering to convert text into runnable prompts in the code.
 
 
 API Integration:
