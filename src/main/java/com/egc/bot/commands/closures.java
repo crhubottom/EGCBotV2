@@ -28,22 +28,22 @@ public class closures implements ICommand {
             JSONObject jsonObject = jsonArray.getJSONObject(i);
             if(date.equals(jsonObject.getString("date"))){
                 if(Objects.equals(jsonObject.getString("time"), "12:00 am to 2:00 pm")){
-                    builder.append("**").append(jsonObject.getString("type")).append(": ").append(jsonObject.getString("date")).append("  ").append(jsonObject.getString("time")+"     LAUNCH CLOSURE**\n");
+                    builder.append("**").append(jsonObject.getString("type")).append(": ").append(jsonObject.getString("date")).append("  ").append(jsonObject.getString("time")).append("     LAUNCH CLOSURE**\n");
                 }else if(Objects.equals(jsonObject.getString("time"), "5:00 am to 5:00 pm")){
-                    builder.append(jsonObject.getString("type")).append(": ").append(jsonObject.getString("date")).append("  ").append(jsonObject.getString("time") + "     WDR CLOSURE\n");
+                    builder.append(jsonObject.getString("type")).append(": ").append(jsonObject.getString("date")).append("  ").append(jsonObject.getString("time")).append("     WDR CLOSURE\n");
                 }else{
-                    builder.append("**").append(jsonObject.getString("type")).append(": ").append(jsonObject.getString("date")).append("  ").append(jsonObject.getString("time")+"**\n");
+                    builder.append("**").append(jsonObject.getString("type")).append(": ").append(jsonObject.getString("date")).append("  ").append(jsonObject.getString("time")).append("**\n");
 
                 }
             }else {
                 if (Objects.equals(jsonObject.getString("time"), "12:00 am to 2:00 pm")) {
-                    builder.append(jsonObject.getString("type")).append(": ").append(jsonObject.getString("date")).append("  ").append(jsonObject.getString("time") + "     LAUNCH CLOSURE\n");
+                    builder.append(jsonObject.getString("type")).append(": ").append(jsonObject.getString("date")).append("  ").append(jsonObject.getString("time")).append("     LAUNCH CLOSURE\n");
 
                 }else if(Objects.equals(jsonObject.getString("time"), "5:00 am to 5:00 pm")){
-                    builder.append(jsonObject.getString("type")).append(": ").append(jsonObject.getString("date")).append("  ").append(jsonObject.getString("time") + "     WDR CLOSURE\n");
+                    builder.append(jsonObject.getString("type")).append(": ").append(jsonObject.getString("date")).append("  ").append(jsonObject.getString("time")).append("     WDR CLOSURE\n");
 
                 }else{
-                    builder.append(jsonObject.getString("type")).append(": ").append(jsonObject.getString("date")).append("  ").append(jsonObject.getString("time")+"\n");
+                    builder.append(jsonObject.getString("type")).append(": ").append(jsonObject.getString("date")).append("  ").append(jsonObject.getString("time")).append("\n");
                 }
             }
 
