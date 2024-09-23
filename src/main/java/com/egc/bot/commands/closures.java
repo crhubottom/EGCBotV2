@@ -11,6 +11,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Objects;
@@ -22,7 +23,7 @@ public class closures implements ICommand {
         ctx.deferReply().queue();
         Calendar cal = Calendar.getInstance();
         String date = new SimpleDateFormat("MMMM dd, yyyy").format(cal.getTime());
-        JSONArray jsonArray  = new JSONArray(IOUtils.toString(new URL("https://starbase.nerdpg.live/api/json/roadClosures"), Charset.forName("UTF-8")));
+        JSONArray jsonArray  = new JSONArray(IOUtils.toString(new URL("https://starbase.nerdpg.live/api/json/roadClosures"), StandardCharsets.UTF_8));
         StringBuilder builder = new StringBuilder();
         for(int i = 0; i < jsonArray.length(); i++){
             JSONObject jsonObject = jsonArray.getJSONObject(i);
