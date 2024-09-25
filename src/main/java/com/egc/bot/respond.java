@@ -1,5 +1,6 @@
 package com.egc.bot;
 
+import com.egc.bot.database.messageDB;
 import com.egc.bot.database.settingsDB;
 import io.github.stefanbratanov.jvm.openai.OpenAIException;
 import net.dv8tion.jda.api.entities.Message;
@@ -39,6 +40,11 @@ public class respond extends ListenerAdapter {
         //System.out.println(event.getMessage().getContentRaw());
         String message = event.getMessage().getContentRaw();
         //System.out.println(Objects.requireNonNull(event.getMember()).getOnlineStatus());
+        System.out.println(message);
+        if(event.getMember()!=null) {
+            System.out.println("message received");
+            messageDB.addMessage(event.getMember().getIdLong());
+        }
         if(dnd){
             if(event.getChannel().getId().equals("1268086672420245556")) {
                 if(event.getAuthor().getIdLong()!=id){
