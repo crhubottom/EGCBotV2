@@ -113,12 +113,66 @@ public class respond extends ListenerAdapter {
                     }
                 }
             }
-            if(message.contains("<@1237574116328865873>")&&!event.getChannel().getId().equals("1268086672420245556")){
+
+
+        }
+        if(event.getMessage().getReferencedMessage() != null) {
+            if (event.getMessage().getReferencedMessage().getAuthor().equals(event.getJDA().getSelfUser())) {
+
                 TextChannel tc = event.getChannel().asTextChannel();
                 System.out.println(tc.getName());
                 MessageHistory messagesHistory = tc.getHistoryBefore(tc.getLatestMessageId(), 40).complete();
                 List<Message> messages = messagesHistory.getRetrievedHistory();
                 StringBuilder ss = new StringBuilder();
+                for (int i = messages.size() - 1; i >= 0; i--) {
+                    if (!messages.get(i).getContentDisplay().isEmpty()) {
+                        ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
+                    }
+                }
+
+                ss.append("\n(Newest Message) 0: ").append(event.getMessage().getReferencedMessage().getMember().getNickname()).append(": ").append(event.getMessage().getReferencedMessage().getContentDisplay()).append("\n");
+                tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: " + message + ". Do not mention your name. Dont ask questions. Here is the context to that message: " + ss, "gpt-4o-mini")).queue();
+            }
+        }
+
+
+
+
+
+
+            if(message.contains("<@1237574116328865873>")&&!event.getChannel().getId().equals("1268086672420245556")){
+                TextChannel tc = event.getChannel().asTextChannel();
+                System.out.println(tc.getName());
+                if (!event.getMessage().getAttachments().isEmpty()) {
+                    System.out.println("has attachments");
+                    event.getMessage().getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
+                            .thenAccept(file -> event.getChannel().sendMessage(AIController.visionCall(message, "vision.png")).queue())
+                            .exceptionally(t ->
+                            { // handle failure
+                                t.printStackTrace();
+                                return null;
+                            });
+                    return;
+                }
+                if(event.getMessage().getReferencedMessage() != null) {
+                    if (!event.getMessage().getReferencedMessage().getAttachments().isEmpty()) {
+                        System.out.println("has attachments");
+                        event.getMessage().getReferencedMessage().getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
+                                .thenAccept(file -> event.getChannel().sendMessage(AIController.visionCall(message, "vision.png")).queue())
+                                .exceptionally(t ->
+                                { // handle failure
+                                    t.printStackTrace();
+                                    return null;
+                                });
+                        return;
+                    }
+
+                }
+                MessageHistory messagesHistory = tc.getHistoryBefore(tc.getLatestMessageId(), 40).complete();
+                List<Message> messages = messagesHistory.getRetrievedHistory();
+                StringBuilder ss = new StringBuilder();
+
+
                 for (int i = messages.size() - 1; i >= 0; i--) {
                     if (!messages.get(i).getContentDisplay().isEmpty()&&messages.get(i).getMember()!=null) {
                         ss.append("\n").append(i+1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
@@ -187,5 +241,5 @@ public class respond extends ListenerAdapter {
             }
         }
     }
-}
+
 

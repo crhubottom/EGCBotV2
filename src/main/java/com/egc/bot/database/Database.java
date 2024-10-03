@@ -21,7 +21,6 @@ public class Database {
         } catch (SQLException e) {
             e.printStackTrace();
             System.exit(3);
-
         }
     }
     private void initialize() throws SQLException {
