@@ -20,6 +20,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.egc.bot.Bot.keys;
 
@@ -54,12 +55,13 @@ public class AIController {
     }
 
     public static String visionCall(String prompt, String fileName){
+        StringBuilder out= new StringBuilder();
         var openAI = SimpleOpenAI.builder()
-                .apiKey(System.getenv("OPENAI_API_KEY"))
+                .apiKey(keys.get("OPENAI_KEY"))
                 .build();
 
         var chatRequest = ChatRequest.builder()
-                .model("gpt-4o-mini")
+                .model("gpt-4o")
                 .messages(List.of(
                         io.github.sashirestela.openai.domain.chat.ChatMessage.UserMessage.of(List.of(
                                 ContentPart.ContentPartText.of(
@@ -71,9 +73,9 @@ public class AIController {
         var chatResponse = openAI.chatCompletions().createStream(chatRequest).join();
         chatResponse.filter(chatResp -> chatResp.getChoices().size() > 0 && chatResp.firstContent() != null)
                 .map(Chat::firstContent)
-                .forEach(System.out::print);
+                .forEach(out::append);
 
-        return chatResponse.toString();
+        return out.toString();
     }
 
     private static ContentPart.ContentPartImageUrl.ImageUrl loadImageAsBase64(String imagePath) {
