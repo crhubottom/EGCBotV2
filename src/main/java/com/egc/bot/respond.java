@@ -106,12 +106,50 @@ public class respond extends ListenerAdapter {
                     }
                 }
             }
+
+
+            if(event.getMessage().getReferencedMessage().getAuthor().equals(event.getJDA().getSelfUser())){
+
+                if(!event.getMessage().getReferencedMessage().getAttachments().isEmpty()){
+
+                    event.getMessage().getReferencedMessage().getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"));
+                    try {
+                        event.getChannel().sendMessage(AIc.visionCall("What do you see in the image? Give in details in no more than 100 words.","vision.png")).queue();
+                        }catch (OpenAIException e) {
+                        e.printStackTrace();
+                    }
+                    return;
+                    }
+                }
+                TextChannel tc = event.getChannel().asTextChannel();
+                System.out.println(tc.getName());
+                MessageHistory messagesHistory = tc.getHistoryBefore(tc.getLatestMessageId(), 40).complete();
+                List<Message> messages = messagesHistory.getRetrievedHistory();
+                StringBuilder ss = new StringBuilder();
+                for (int i = messages.size() - 1; i >= 0; i--) {
+                    if (!messages.get(i).getContentDisplay().isEmpty()) {
+                        ss.append("\n").append(i+1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
+                    }
+                }
+
+                        ss.append("\n(Newest Message) 0: ").append(event.getMessage().getReferencedMessage().getMember().getNickname()).append(": ").append(event.getMessage().getReferencedMessage().getContentDisplay()).append("\n");
+                        tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message: "+ss,"gpt-4o-mini")).queue();
+            }
+
+
+
+
+
+
+
             if(message.contains("<@1237574116328865873>")&&!event.getChannel().getId().equals("1268086672420245556")){
                 TextChannel tc = event.getChannel().asTextChannel();
                 System.out.println(tc.getName());
                 MessageHistory messagesHistory = tc.getHistoryBefore(tc.getLatestMessageId(), 40).complete();
                 List<Message> messages = messagesHistory.getRetrievedHistory();
                 StringBuilder ss = new StringBuilder();
+
+
                 for (int i = messages.size() - 1; i >= 0; i--) {
                     if (!messages.get(i).getContentDisplay().isEmpty()) {
                         ss.append("\n").append(i+1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
