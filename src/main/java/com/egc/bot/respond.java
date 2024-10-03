@@ -121,6 +121,7 @@ public class respond extends ListenerAdapter {
                     return;
                     }
                 }
+
                 TextChannel tc = event.getChannel().asTextChannel();
                 System.out.println(tc.getName());
                 MessageHistory messagesHistory = tc.getHistoryBefore(tc.getLatestMessageId(), 40).complete();
