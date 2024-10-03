@@ -52,7 +52,6 @@ public class Bot{
     public static storeDB store= new storeDB();
     public static boolean randReply = true;
     public static boolean frankieReply = true;
-    public static boolean voiceTip = true;
     public static boolean firstRun = true;
     public static rocketEvent rocket = new rocketEvent();
     public static volatile boolean record=false;
@@ -83,13 +82,19 @@ public class Bot{
                 Command.slash("meme", "Grabs a random meme off Reddit", new meme()),
                 Command.slash("store", "Display the item store", new showStore()),
                 Command.slash("scoreboard", "Displays the gold scoreboard", new scoreboard()),
+                Command.slash("topmessages", "Displays the users with the most messages", new messageScoreboard()),
                 Command.slash("tipcount", "Displays tip count for each user", new tipCounter()),
                 Command.slash("dnd", "Toggles dnd on and off", new toggleDnD()),
                 Command.slash("inventory", "Displays an inventory", new listItem())
                         .addOption(OptionType.STRING, "user", "user, can leave blank to get yours"),
+                Command.slash("messages", "Displays the message count of a user", new listMessageCount())
+                        .addOption(OptionType.STRING, "user", "user, can leave blank to get yours"),
                 Command.slash("buy", "Buy an item", new buyItem())
                         .addOption(OptionType.STRING, "item", "Item to buy.")
                         .addOption(OptionType.INTEGER, "amount", "Defaults to 1"),
+                Command.slash("init", "initialize db, admin only", new init())
+                        .addOption(OptionType.STRING, "id", "user id")
+                        .addOption(OptionType.INTEGER, "count", "amount to add"),
                 Command.slash("trade", "Trade items with a user.", new tradeItem())
                         .addOption(OptionType.STRING, "user", "user to trade with.")
                         .addOption(OptionType.STRING, "youritem", "Your item to trade")
@@ -146,6 +151,7 @@ public class Bot{
                         .addOption(OptionType.STRING, "status", "the content")
         ).queue();
         client.awaitReady();
+        settingsDB.initialize();
         client.getPresence().setActivity(Activity.watching("The World Burn"));
         if(Objects.equals(keys.get("TESTING_MODE"), "FALSE")) {
             System.out.println("matches");
@@ -186,7 +192,7 @@ public class Bot{
         client.getGuildById(guildID).getTextChannelById(keys.get("TEST_CHANNEL")).sendMessage("EGCbot is Online. " + timeStamp).queue();
         Runnable drawRunnable = () -> {
             int ran = (int) (Math.random() * 30);
-            if (ran == 3 && voiceTip) {
+            if (ran == 3 && settingsDB.getState("voiceTip")) {
                 System.out.println("tipEvent");
                 tipEvent tip = new tipEvent();
                 tip.tip();

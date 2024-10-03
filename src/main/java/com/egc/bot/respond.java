@@ -1,5 +1,7 @@
 package com.egc.bot;
 
+import com.egc.bot.database.messageDB;
+import com.egc.bot.database.settingsDB;
 import io.github.stefanbratanov.jvm.openai.OpenAIException;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
@@ -38,6 +40,11 @@ public class respond extends ListenerAdapter {
         //System.out.println(event.getMessage().getContentRaw());
         String message = event.getMessage().getContentRaw();
         //System.out.println(Objects.requireNonNull(event.getMember()).getOnlineStatus());
+        System.out.println(message);
+        if(event.getMember()!=null) {
+            System.out.println("message received");
+            messageDB.addMessage(event.getMember().getIdLong());
+        }
         if(dnd){
             if(event.getChannel().getId().equals("1268086672420245556")) {
                 if(event.getAuthor().getIdLong()!=id){
@@ -167,7 +174,7 @@ public class respond extends ListenerAdapter {
 
 
                 for (int i = messages.size() - 1; i >= 0; i--) {
-                    if (!messages.get(i).getContentDisplay().isEmpty()) {
+                    if (!messages.get(i).getContentDisplay().isEmpty()&&messages.get(i).getMember()!=null) {
                         ss.append("\n").append(i+1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
                     }
                 }
@@ -199,20 +206,20 @@ public class respond extends ListenerAdapter {
 
                 int ran = (int) (Math.random() * 40);
                 System.out.println(ran);
-                if ((ran == 5 && randReply)) {
+                if ((ran == 5 && settingsDB.getState("randReply"))) {
                     TextChannel tc = event.getChannel().asTextChannel();
                     System.out.println(tc.getName());
                     MessageHistory messagesHistory = tc.getHistoryBefore(tc.getLatestMessageId(), 40).complete();
                     List<Message> messages = messagesHistory.getRetrievedHistory();
                     StringBuilder ss = new StringBuilder();
                     for (int i = messages.size() - 1; i >= 0; i--) {
-                        if (!messages.get(i).getContentDisplay().isEmpty()) {
+                        if (!messages.get(i).getContentDisplay().isEmpty()&&messages.get(i).getMember()!=null) {
                             ss.append("\n").append(i+1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
                         }
                     }
                     tc.getHistory().retrievePast(1).queue(msgs -> {
                             System.out.println(msgs.get(0).getContentDisplay());
-                            if (!msgs.get(0).getContentDisplay().isEmpty()) {
+                            if (!msgs.get(0).getContentDisplay().isEmpty()&&msgs.get(0).getMember()!=null) {
 
                                     //ss.append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
                                     ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
@@ -226,7 +233,7 @@ public class respond extends ListenerAdapter {
                     if (event.getMessage().getAuthor().getName().equals("frankie4sd")) {
                         count++;
                         int rand_int1 = rand.nextInt(30);
-                        if (rand_int1 == 3 && frankieReply) {
+                        if (rand_int1 == 3 && settingsDB.getState("frankie")) {
                             event.getMessage().reply("https://tenor.com/view/shh-gif-27680056").queue(); // call queue
                         }
                     }
