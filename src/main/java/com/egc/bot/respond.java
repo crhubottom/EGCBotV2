@@ -114,7 +114,7 @@ public class respond extends ListenerAdapter {
 
                     event.getMessage().getReferencedMessage().getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"));
                     try {
-                        event.getChannel().sendMessage(AIc.visionCall("What do you see in the image? Give in details in no more than 100 words.","vision.png")).queue();
+                        event.getChannel().sendMessage(AIController.visionCall(message,"vision.png")).queue();
                         }catch (OpenAIException e) {
                         e.printStackTrace();
                     }
