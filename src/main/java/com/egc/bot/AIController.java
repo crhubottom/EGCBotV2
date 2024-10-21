@@ -41,7 +41,7 @@ public class AIController {
     public String gptCallWithSystem(String prompt,String systemPrompt,String model){
         OpenAI openAI = OpenAI.newBuilder(keys.get("OPENAI_KEY")).build();
         ChatClient chatClient = openAI.chatClient();
-        List<ChatMessage> messages = new ArrayList<>();
+        List<ChatMessage> messages = new ArrayList<>(); 
         messages.add(ChatMessage.systemMessage(systemPrompt));
         messages.add(ChatMessage.userMessage(prompt));
         CreateChatCompletionRequest createChatCompletionRequest = CreateChatCompletionRequest.newBuilder()

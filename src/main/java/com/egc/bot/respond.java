@@ -2,6 +2,7 @@ package com.egc.bot;
 
 import com.egc.bot.database.messageDB;
 import com.egc.bot.database.settingsDB;
+import io.github.stefanbratanov.jvm.openai.Attachment;
 import io.github.stefanbratanov.jvm.openai.OpenAIException;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
@@ -120,18 +121,48 @@ public class respond extends ListenerAdapter {
             if (event.getMessage().getReferencedMessage().getAuthor().equals(event.getJDA().getSelfUser())) {
 
                 TextChannel tc = event.getChannel().asTextChannel();
-                System.out.println(tc.getName());
-                MessageHistory messagesHistory = tc.getHistoryBefore(tc.getLatestMessageId(), 40).complete();
+                MessageHistory messagesHistory = tc.getHistoryBefore(event.getMessage().getReferencedMessage().getId(), 40).complete();
                 List<Message> messages = messagesHistory.getRetrievedHistory();
                 StringBuilder ss = new StringBuilder();
                 for (int i = messages.size() - 1; i >= 0; i--) {
                     if (!messages.get(i).getContentDisplay().isEmpty()) {
                         ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
+                        if(!messages.get(i).getAttachments().isEmpty()){
+                            for(int x=0;x<messages.get(i).getAttachments().size();x++){
+                                ss.append(" Attachments: ").append(x).append(": ");
+                                messages.get(i).getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
+                                        .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")));
+                            }
+                        }
                     }
                 }
 
-                ss.append("\n(Newest Message) 0: ").append(event.getMessage().getReferencedMessage().getMember().getNickname()).append(": ").append(event.getMessage().getReferencedMessage().getContentDisplay()).append("\n");
-                tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: " + message + ". Do not mention your name. Dont ask questions. Here is the context to that message: " + ss, "gpt-4o-mini")).queue();
+                tc.getHistory().retrievePast(1).queue(msgs -> {
+                    System.out.println(msgs.get(0).getContentDisplay());
+                    if (!msgs.get(0).getAuthor().isBot() && !msgs.get(0).getContentDisplay().isEmpty()) {
+                        //ss.append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
+                        ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
+                        if (msgs.get(0).getMember()!=null) {
+                            if (!msgs.get(0).getContentDisplay().isEmpty()) {
+                                ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
+                            }
+                            if (!msgs.get(0).getAttachments().isEmpty()) {
+                                for (int x = 0; x < msgs.get(0).getAttachments().size(); x++) {
+                                    ss.append(" Attachments: ").append(x).append(": ");
+                                    msgs.get(0).getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
+                                            .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")));
+                                }
+                            }
+                        }
+                        //System.out.println("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: "+ss);
+                        System.out.println(ss);
+                        tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message: "+ss,"gpt-4o-mini")).queue();
+                    }else{
+                        System.out.println("ELSE:\n\n"+ss);
+                        tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message: "+ss,"gpt-4o-mini")).queue();
+                    }
+
+                });
             }
         }
 
@@ -174,22 +205,43 @@ public class respond extends ListenerAdapter {
 
 
                 for (int i = messages.size() - 1; i >= 0; i--) {
-                    if (!messages.get(i).getContentDisplay().isEmpty()&&messages.get(i).getMember()!=null) {
-                        ss.append("\n").append(i+1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
+                    if (messages.get(i).getMember()!=null) {
+                        if(!messages.get(i).getContentDisplay().isEmpty()) {
+                            ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
+                        }
+                        if(!messages.get(i).getAttachments().isEmpty()){
+                            if(messages.get(i).getContentDisplay().isEmpty()) {
+                                ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ");
+                            }
+                            for(int x=0;x<messages.get(i).getAttachments().size();x++){
+                                ss.append(" Images: ").append(x+1).append(": ");
+                                messages.get(i).getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
+                                        .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")))
+                                        .join();
+                            }
+                        }
                     }
                 }
                     tc.getHistory().retrievePast(1).queue(msgs -> {
                         System.out.println(msgs.get(0).getContentDisplay());
-
-                            if (!msgs.get(0).getAuthor().isBot() && !msgs.get(0).getContentDisplay().isEmpty()) {
-                                //ss.append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
+                        if (msgs.get(0).getMember()!=null) {
+                            if(!msgs.get(0).getContentDisplay().isEmpty()) {
                                 ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
+                            }
+                            if(!msgs.get(0).getAttachments().isEmpty()){
+                                for(int x=0;x<msgs.get(0).getAttachments().size();x++){
+                                    ss.append(" Images: ").append(x+1).append(": ");
+                                    event.getMessage().getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
+                                            .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")))
+                                            .join();
+                                }
+                            }
                                 //System.out.println("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: "+ss);
                                 System.out.println(ss);
-                                tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message: "+ss,"gpt-4o-mini")).queue();
+                                tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message. The Images: section describes the images the user sent: "+ss,"gpt-4o-mini")).queue();
                             }else{
                                 System.out.println("ELSE:\n\n"+ss);
-                                tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message: "+ss,"gpt-4o-mini")).queue();
+                                tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message. The Images: section describes the images the user sent: "+ss,"gpt-4o-mini")).queue();
                             }
 
                     });
@@ -213,21 +265,37 @@ public class respond extends ListenerAdapter {
                     List<Message> messages = messagesHistory.getRetrievedHistory();
                     StringBuilder ss = new StringBuilder();
                     for (int i = messages.size() - 1; i >= 0; i--) {
-                        if (!messages.get(i).getContentDisplay().isEmpty()&&messages.get(i).getMember()!=null) {
-                            ss.append("\n").append(i+1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
+                        if (messages.get(i).getMember()!=null) {
+                            if(!messages.get(i).getContentDisplay().isEmpty()) {
+                                ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
+                            }
+                            if(!messages.get(i).getAttachments().isEmpty()){
+                                for(int x=0;x<messages.get(i).getAttachments().size();x++){
+                                    ss.append(" Attachments: ").append(x).append(": ");
+                                    event.getMessage().getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
+                                            .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")));
+                                }
+                            }
                         }
                     }
                     tc.getHistory().retrievePast(1).queue(msgs -> {
                             System.out.println(msgs.get(0).getContentDisplay());
-                            if (!msgs.get(0).getContentDisplay().isEmpty()&&msgs.get(0).getMember()!=null) {
-
-                                    //ss.append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
+                            if (msgs.get(0).getMember()!=null) {
+                                if(!msgs.get(0).getContentDisplay().isEmpty()) {
                                     ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
+                                }
+                                if(!msgs.get(0).getAttachments().isEmpty()){
+                                    for(int x=0;x<msgs.get(0).getAttachments().size();x++){
+                                        ss.append(" Attachments: ").append(x).append(": ");
+                                        event.getMessage().getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
+                                                .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")));
+                                    }
+                                }
                                     //System.out.println("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: "+ss);
                                     tc.sendMessage(AIc.gptCall("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: \n"+ss,"gpt-4o-mini")).queue();
                                 }else{
                                     tc.sendMessage(AIc.gptCall("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: \n"+ss,"gpt-4o-mini")).queue();
-                                }
+                            }
 
                         });
                     if (event.getMessage().getAuthor().getName().equals("frankie4sd")) {

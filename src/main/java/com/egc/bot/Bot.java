@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -165,7 +168,7 @@ public class Bot{
             List<TextChannel> channels = Objects.requireNonNull(client.getGuildById(guildID)).getTextChannels();
             for (TextChannel channel : channels) {
                 if (!channel.getId().equals(keys.get("TEST_CHANNEL"))) {
-                    MessageHistory messagesHistory = channel.getHistoryBefore(channel.getLatestMessageId(), 10).complete();
+                    MessageHistory messagesHistory = channel.getHistoryBefore(channel.getLatestMessageId(), 100).complete();
                     List<Message> messages = messagesHistory.getRetrievedHistory();
                     StringBuilder ss = new StringBuilder();
                     channel.getHistory().retrievePast(1).queue(msgs -> {
@@ -174,12 +177,16 @@ public class Bot{
                             ss.append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay());
                         }
                     });
+                    OffsetDateTime offsetDateTime = OffsetDateTime.now().minusDays(1);
                     for (int i = messages.size() - 1; i >= 0; i--) {
-                        if (!messages.get(i).getAuthor().isBot() && !messages.get(i).getContentDisplay().isEmpty()) {
-                            ss.append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay() + "\n");
+                        if(messages.get(i).getTimeCreated().isAfter(offsetDateTime)) {
+                            if (!messages.get(i).getAuthor().isBot() && !messages.get(i).getContentDisplay().isEmpty()) {
+                                //System.out.println("Message: " + messages.get(i).getContentDisplay());
+                                ss.append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay() + "\n");
+                            }
                         }
                     }
-                    channel.getManager().setTopic(AIc.gptCall("Make a short funny one sentence summary about these messages from a discord channel named " + channel.getName() + ": " + ss, "gpt-4o-mini")).queue();
+                    channel.getManager().setTopic(AIc.gptCall("Make a short funny couple sentence summary about these messages from a discord channel named " + channel.getName() + ". Try to include every conversation that occurred. If its blank, make up something about why theres no messages in the past day: " + ss, "gpt-4o")).queue();
                 }
             }
 
