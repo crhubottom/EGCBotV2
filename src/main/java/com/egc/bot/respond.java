@@ -127,6 +127,7 @@ public class respond extends ListenerAdapter {
                 for (int i = messages.size() - 1; i >= 0; i--) {
                     if (!messages.get(i).getContentDisplay().isEmpty()) {
                         ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
+                       /*
                         if(!messages.get(i).getAttachments().isEmpty()){
                             for(int x=0;x<messages.get(i).getAttachments().size();x++){
                                 ss.append(" Attachments: ").append(x).append(": ");
@@ -134,6 +135,8 @@ public class respond extends ListenerAdapter {
                                         .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")));
                             }
                         }
+
+                        */
                     }
                 }
 
@@ -146,6 +149,7 @@ public class respond extends ListenerAdapter {
                             if (!msgs.get(0).getContentDisplay().isEmpty()) {
                                 ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
                             }
+                            /*
                             if (!msgs.get(0).getAttachments().isEmpty()) {
                                 for (int x = 0; x < msgs.get(0).getAttachments().size(); x++) {
                                     ss.append(" Attachments: ").append(x).append(": ");
@@ -153,6 +157,8 @@ public class respond extends ListenerAdapter {
                                             .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")));
                                 }
                             }
+
+                             */
                         }
                         //System.out.println("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: "+ss);
                         System.out.println(ss);
@@ -209,6 +215,7 @@ public class respond extends ListenerAdapter {
                         if(!messages.get(i).getContentDisplay().isEmpty()) {
                             ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
                         }
+                        /*
                         if(!messages.get(i).getAttachments().isEmpty()){
                             if(messages.get(i).getContentDisplay().isEmpty()) {
                                 ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ");
@@ -220,6 +227,8 @@ public class respond extends ListenerAdapter {
                                         .join();
                             }
                         }
+
+                         */
                     }
                 }
                     tc.getHistory().retrievePast(1).queue(msgs -> {
@@ -228,6 +237,7 @@ public class respond extends ListenerAdapter {
                             if(!msgs.get(0).getContentDisplay().isEmpty()) {
                                 ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
                             }
+                            /*
                             if(!msgs.get(0).getAttachments().isEmpty()){
                                 for(int x=0;x<msgs.get(0).getAttachments().size();x++){
                                     ss.append(" Images: ").append(x+1).append(": ");
@@ -236,6 +246,8 @@ public class respond extends ListenerAdapter {
                                             .join();
                                 }
                             }
+
+                             */
                                 //System.out.println("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: "+ss);
                                 System.out.println(ss);
                                 tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message. The Images: section describes the images the user sent: "+ss,"gpt-4o-mini")).queue();
@@ -269,6 +281,7 @@ public class respond extends ListenerAdapter {
                             if(!messages.get(i).getContentDisplay().isEmpty()) {
                                 ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
                             }
+                            /*
                             if(!messages.get(i).getAttachments().isEmpty()){
                                 for(int x=0;x<messages.get(i).getAttachments().size();x++){
                                     ss.append(" Attachments: ").append(x).append(": ");
@@ -276,6 +289,8 @@ public class respond extends ListenerAdapter {
                                             .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")));
                                 }
                             }
+
+                             */
                         }
                     }
                     tc.getHistory().retrievePast(1).queue(msgs -> {
@@ -284,6 +299,7 @@ public class respond extends ListenerAdapter {
                                 if(!msgs.get(0).getContentDisplay().isEmpty()) {
                                     ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
                                 }
+                                /*
                                 if(!msgs.get(0).getAttachments().isEmpty()){
                                     for(int x=0;x<msgs.get(0).getAttachments().size();x++){
                                         ss.append(" Attachments: ").append(x).append(": ");
@@ -291,6 +307,8 @@ public class respond extends ListenerAdapter {
                                                 .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")));
                                     }
                                 }
+
+                                 */
                                     //System.out.println("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: "+ss);
                                     tc.sendMessage(AIc.gptCall("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: \n"+ss,"gpt-4o-mini")).queue();
                                 }else{
