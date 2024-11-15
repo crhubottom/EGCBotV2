@@ -21,8 +21,8 @@ public class roulette implements ICommand {
             ctx.getHook().sendMessage("You must enter a correct color.").queue();
             return;
         }
-        if(ctx.getOption("gold").getAsInt()<1||ctx.getOption("gold").getAsInt()>10000){
-            ctx.getHook().sendMessage("You must enter a correct amount of gold (1->10000).").queue();
+        if(ctx.getOption("gold").getAsInt()<1){
+            ctx.getHook().sendMessage("You must enter a correct amount of gold.").queue();
             return;
         }
         if(inv.checkItem(ctx.getMember().getIdLong(),"Gold",ctx.getOption("gold").getAsInt())){
