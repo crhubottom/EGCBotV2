@@ -19,7 +19,8 @@ public class invDB {
         if (!isMyResultSetEmpty(rs)){
             System.out.println("Result set not empty");
             while (rs.next()) {
-                if (rs.getString("item").equals(item)) {
+
+                if (rs.getString("item")!=null&&rs.getString("item").equals(item)) {
                     System.out.println("Found " + rs.getString("item") + " in " + client.getGuildById(guildID).getMemberById(id).getEffectiveName());
                     String query = "UPDATE inventory SET count=? WHERE id=? AND item=?";
                     PreparedStatement preparedStmt = Database.con.prepareStatement(query);

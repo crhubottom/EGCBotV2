@@ -34,7 +34,7 @@ public class AIController {
                 .build();
         ChatCompletion chatCompletion = chatClient.createChatCompletion(createChatCompletionRequest);
         String out = chatCompletion.toString();
-        System.out.println(out);
+        //System.out.println(out);
         out = out.substring(out.indexOf("content=") + 8, out.lastIndexOf(", refusal"));
         return out;
     }

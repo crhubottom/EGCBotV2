@@ -164,29 +164,35 @@ public class Bot{
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
-            System.out.println(client.getGuildById("600003146932027404").getName());
             List<TextChannel> channels = Objects.requireNonNull(client.getGuildById(guildID)).getTextChannels();
             for (TextChannel channel : channels) {
                 if (!channel.getId().equals(keys.get("TEST_CHANNEL"))) {
                     MessageHistory messagesHistory = channel.getHistoryBefore(channel.getLatestMessageId(), 100).complete();
-                    List<Message> messages = messagesHistory.getRetrievedHistory();
                     StringBuilder ss = new StringBuilder();
-                    channel.getHistory().retrievePast(1).queue(msgs -> {
-                        System.out.println(msgs.get(0).getContentDisplay());
-                        if (!msgs.get(0).getAuthor().isBot() && !msgs.get(0).getContentDisplay().isEmpty()) {
-                            ss.append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay());
-                        }
-                    });
                     OffsetDateTime offsetDateTime = OffsetDateTime.now().minusDays(1);
-                    for (int i = messages.size() - 1; i >= 0; i--) {
-                        if(messages.get(i).getTimeCreated().isAfter(offsetDateTime)) {
-                            if (!messages.get(i).getAuthor().isBot() && !messages.get(i).getContentDisplay().isEmpty()) {
-                                //System.out.println("Message: " + messages.get(i).getContentDisplay());
-                                ss.append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay() + "\n");
-                            }
-                        }
-                    }
-                    channel.getManager().setTopic(AIc.gptCall("Make a short funny couple sentence summary about these messages from a discord channel named " + channel.getName() + ". Try to include every conversation that occurred. If its blank, make up something about why theres no messages in the past day: " + ss, "gpt-4o")).queue();
+                    channel.getHistory().retrievePast(2)
+                            .map(messages -> messages.get(0))
+                            .queue(message -> {
+                                if(message.getTimeCreated().isAfter(offsetDateTime)) {
+                                    if (!message.getAuthor().isBot() && !message.getContentDisplay().isEmpty()) {
+
+                                        ss.append(message.getMember().getNickname()).append(": ").append(message.getContentDisplay() + "\n");
+                                    }
+                                }
+                                List<Message> messages = messagesHistory.getRetrievedHistory();
+                                for (int i = messages.size() - 1; i >= 0; i--) {
+                                    if(messages.get(i).getTimeCreated().isAfter(offsetDateTime)) {
+                                        if (!messages.get(i).getAuthor().isBot() && !messages.get(i).getContentDisplay().isEmpty()) {
+                                            ss.append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay() + "\n");
+                                        }
+                                    }
+                                }
+                                if(!ss.isEmpty()) {
+                                    channel.getManager().setTopic(AIc.gptCall("Make a short funny couple sentence summary about these messages from a discord channel named " + channel.getName() + ". Try to include every conversation that occurred. If its blank, make up something about why theres no messages in the past day: " + ss, "gpt-4o")).queue();
+                                    System.out.println(channel.getName()+" updated");
+                                }
+                            });
+
                 }
             }
 
@@ -195,8 +201,8 @@ public class Bot{
         }
 
         ArrayList<String> games = new ArrayList<>();
-        String timeStamp = new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime());
-        client.getGuildById(guildID).getTextChannelById(keys.get("TEST_CHANNEL")).sendMessage("EGCbot is Online. " + timeStamp).queue();
+        //String timeStamp = new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime());
+        //client.getGuildById(guildID).getTextChannelById(keys.get("TEST_CHANNEL")).sendMessage("EGCbot is Online. " + timeStamp).queue();
         Runnable drawRunnable = () -> {
             int ran = (int) (Math.random() * 30);
             if (ran == 3 && settingsDB.getState("voiceTip")) {
