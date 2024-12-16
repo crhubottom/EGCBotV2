@@ -2,8 +2,10 @@ package com.egc.bot;
 
 import com.egc.bot.database.messageDB;
 import com.egc.bot.database.settingsDB;
+import com.egc.bot.events.countTracker;
 import io.github.stefanbratanov.jvm.openai.Attachment;
 import io.github.stefanbratanov.jvm.openai.OpenAIException;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -13,6 +15,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.utils.FileUpload;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.List;
@@ -31,6 +34,7 @@ public class respond extends ListenerAdapter {
     public static FileUpload uploadedImage;
     public static StringBuilder story = new StringBuilder();
     public static long id=0;
+    public static countTracker cT = new countTracker();
     public static boolean secondPart=false;
     public void trivia(String answer, String channelID) {
         respond.answer = answer;
@@ -45,6 +49,18 @@ public class respond extends ListenerAdapter {
         if(event.getMember()!=null) {
             System.out.println("message received");
             messageDB.addMessage(event.getMember().getIdLong());
+        }
+
+        if(event.getChannel().getId().equals("1318277991398117457")) {
+            if(!event.getAuthor().isBot()) {
+                if(cT.messageIn(event.getMessage().getContentRaw())!=-1){
+                    EmbedBuilder eb = new EmbedBuilder();
+                    eb.setTitle("Count Restarted");
+                    eb.setColor(Color.red);
+                    eb.setDescription("High Score: "+cT.messageIn(event.getMessage().getContentRaw()));
+                    event.getChannel().sendMessageEmbeds(eb.build()).queue();
+                }
+            }
         }
         if(dnd){
             if(event.getChannel().getId().equals("1268086672420245556")) {
