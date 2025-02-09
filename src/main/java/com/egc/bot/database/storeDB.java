@@ -43,7 +43,7 @@ public class storeDB {
     public String buy(String item, long id, int amount){
         PreparedStatement ps;
         try {
-            ps = Database.con.prepareStatement("SELECT * FROM store WHERE name = ?");
+            ps = Database.con.prepareStatement("SELECT * FROM store WHERE BINARY name = ?");
             ps.setString(1, item);
             ResultSet rs = ps.executeQuery();
             System.out.println(item +": "+amount);
