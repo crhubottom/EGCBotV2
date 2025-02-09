@@ -1,6 +1,5 @@
 package com.egc.bot;
 
-import com.egc.bot.audio.AudioPlayerSendHandler;
 import com.egc.bot.audio.AudioReceiveHandler;
 import com.egc.bot.audio.getMicAudio;
 import com.egc.bot.commands.*;
@@ -26,8 +25,6 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -85,6 +82,14 @@ public class Bot{
                 Command.slash("meme", "Grabs a random meme off Reddit", new meme()),
                 Command.slash("store", "Display the item store", new showStore()),
                 Command.slash("scoreboard", "Displays the gold scoreboard", new scoreboard()),
+                Command.slash("adminadd", "CHASE ONLY-Adds item", new adminAdd())
+                        .addOption(OptionType.STRING, "user", "user")
+                        .addOption(OptionType.STRING, "item", "item")
+                        .addOption(OptionType.INTEGER, "amount", "amount"),
+                Command.slash("adminremove", "CHASE ONLY-Removes item", new adminRemove())
+                        .addOption(OptionType.STRING, "user", "user")
+                        .addOption(OptionType.STRING, "item", "item")
+                        .addOption(OptionType.INTEGER, "amount", "amount"),
                 Command.slash("topmessages", "Displays the users with the most messages", new messageScoreboard()),
                 Command.slash("tipcount", "Displays tip count for each user", new tipCounter()),
                 Command.slash("dnd", "Toggles dnd on and off", new toggleDnD()),
