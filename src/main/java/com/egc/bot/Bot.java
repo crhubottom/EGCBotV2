@@ -1,8 +1,10 @@
 package com.egc.bot;
 
 import com.egc.bot.audio.AudioReceiveHandler;
-import com.egc.bot.audio.getMicAudio;
+import com.egc.bot.audio.PlayerManager;
+import com.egc.bot.audio.commandListener;
 import com.egc.bot.commands.*;
+import com.egc.bot.commands.Queue;
 import com.egc.bot.database.*;
 import com.egc.bot.events.*;
 import com.egc.keys.keyGrabber;
@@ -10,34 +12,45 @@ import io.grpc.LoadBalancerRegistry;
 import io.grpc.internal.PickFirstLoadBalancerProvider;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageHistory;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.requests.Request;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import okhttp3.*;
+import org.apache.commons.io.IOUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class Bot{
     public static JDA client;
     public static long traderID;
     public static long receiverID;
     public static long blackjackID;
+    public static ExecutorService executorService = null;
     public static String traderItem;
     public static String receiverItem;
     public static int traderCount;
@@ -45,8 +58,7 @@ public class Bot{
     public static keyGrabber keys = new keyGrabber();
     public static long guildID= Long.parseLong(keys.get("GUILD"));
     public static List<byte[]> recievedBytes = new ArrayList<>();
-    public static AudioReceiveHandler re = new AudioReceiveHandler();
-    public static getMicAudio t = new getMicAudio();
+    //public static AudioReceiveHandler re = new AudioReceiveHandler();
     public static AudioManager man;
     public static invDB inv = new invDB();
     public static storeDB store= new storeDB();
@@ -58,7 +70,11 @@ public class Bot{
     public static rocketDB rocketDB;
     public static blackjackController bj = new blackjackController();
     public static AIController AIc = new AIController();
+
+     // Change this to your preferred keyword
     public static int rocketRefreshCount=0;
+    public static AudioReceiveHandler receiverHandler;
+
     public Bot() throws InterruptedException {
         String token = keys.get("DISCORD_KEY");
         client = JDABuilder.createDefault(token).enableIntents(GatewayIntent.MESSAGE_CONTENT).enableCache(CacheFlag.ACTIVITY).enableIntents(GatewayIntent.GUILD_PRESENCES).enableIntents(GatewayIntent.GUILD_MEMBERS).setMemberCachePolicy(MemberCachePolicy.ALL).build();
@@ -67,8 +83,11 @@ public class Bot{
         client.addEventListener(new ReadyListener());
         client.addEventListener(new ReadyListener());
         client.addEventListener(new SlashCommandListener());
+
         client.addEventListener(new respond());
         client.addEventListener(new buttonManager());
+        executorService = Executors.newFixedThreadPool(10); // More threads for multiple users
+
         client.updateCommands().addCommands(
                 Command.slash("stop", "Stops the bot", new Stop()),
                 Command.slash("trivia", "Plays a round of trivia", new trivia()),
@@ -136,7 +155,6 @@ public class Bot{
                 Command.slash("addtip", "add a game tip", new addTip())
                         .addOption(OptionType.STRING, "game", "game name")
                         .addOption(OptionType.STRING, "tip", "tip"),
-                Command.slash("record", "Record audio for 5 seconds", new recordAudio()),
                 Command.slash("nextlaunch", "Displays the next rocket launch", new nextLaunch())
                         .addOption(OptionType.STRING, "spacex", "SpaceX only (t/f)"),
                 Command.slash("list", "Lists the tips", new list())
@@ -159,6 +177,7 @@ public class Bot{
                         .addOption(OptionType.STRING, "status", "the content")
         ).queue();
         client.awaitReady();
+        connectToVoiceChannel();
         settingsDB.initialize();
         client.getPresence().setActivity(Activity.watching("The World Burn"));
         if(Objects.equals(keys.get("TESTING_MODE"), "FALSE")) {
@@ -206,8 +225,6 @@ public class Bot{
         }
 
         ArrayList<String> games = new ArrayList<>();
-        //String timeStamp = new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime());
-        //client.getGuildById(guildID).getTextChannelById(keys.get("TEST_CHANNEL")).sendMessage("EGCbot is Online. " + timeStamp).queue();
         Runnable drawRunnable = () -> {
             int ran = (int) (Math.random() * 30);
             if (ran == 3 && settingsDB.getState("voiceTip")) {
@@ -284,14 +301,12 @@ public class Bot{
 
 
         };
-
-
         ScheduledExecutorService exec = Executors.newScheduledThreadPool(1);
         exec.scheduleAtFixedRate(drawRunnable, 0, 1, TimeUnit.MINUTES);
-        man = client.getGuildById(guildID).getAudioManager();
-        re.canReceiveUser();
-        man.setReceivingHandler(re);
-        t.setUp();
+       // man = client.getGuildById(guildID).getAudioManager();
+        //re.canReceiveUser();
+       // man.setReceivingHandler(re);
+        //t.setUp();
         for (int i = 0; i < client.getGuildById(guildID).getMembers().size(); i++) {
             if (!client.getGuildById(guildID).getMembers().get(i).getUser().isBot()&& Objects.equals(client.getGuildById(guildID).getMembers().get(i).getOnlineStatus().toString(), "ONLINE")) {
                 if (!client.getGuildById(guildID).getMembers().get(i).getActivities().isEmpty()) {
@@ -309,7 +324,28 @@ public class Bot{
         }
 
 
+    }
+    private void connectToVoiceChannel() {
+        Guild guild = client.getGuildById(keys.get("GUILD"));
+        if (guild == null) {
+            System.err.println("Guild not found!");
+            return;
+        }
 
+        VoiceChannel voiceChannel = guild.getVoiceChannelById(keys.get("MAIN_VC_ID"));
+        if (voiceChannel == null) {
+            System.err.println("Voice channel not found!");
+            return;
+        }
+        AudioManager audioManager = guild.getAudioManager();
+        receiverHandler = new AudioReceiveHandler();
+        audioManager.setReceivingHandler(receiverHandler);
+        // Connect to the voice channel
+        audioManager.openAudioConnection(voiceChannel);
+        System.out.println("Connected to voice channel: " + voiceChannel.getName());
+        // Start audio processing
+        commandListener listener= new commandListener();
+        listener.startAudioProcessing();
     }
     }
 

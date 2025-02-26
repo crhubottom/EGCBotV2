@@ -9,14 +9,12 @@ import io.github.sashirestela.openai.domain.chat.Chat;
 import io.github.sashirestela.openai.domain.chat.ChatRequest;
 import io.github.stefanbratanov.jvm.openai.*;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -147,6 +145,7 @@ public class AIController {
         }
     }
     public String voiceToText(String fileName){
+       // System.out.println("vts called");
         var openAI = SimpleOpenAI.builder()
                 .apiKey(keys.get("OPENAI_KEY"))
                 .build();
@@ -158,9 +157,34 @@ public class AIController {
                 .timestampGranularity(TranscriptionRequest.TimestampGranularity.WORD)
                 .timestampGranularity(TranscriptionRequest.TimestampGranularity.SEGMENT)
                 .build();
+
         var futureAudio = openAI.audios().transcribe(audioRequest);
         var audioResponse = futureAudio.join();
+        System.out.println("output:"+audioResponse.getText());
         return audioResponse.getText();
     }
+    public String voiceToTextFile(File fileName){
+        long startTime = System.nanoTime();
+        var openAI = SimpleOpenAI.builder()
+                .apiKey(keys.get("OPENAI_KEY"))
+                .build();
+        var audioRequest = TranscriptionRequest.builder()
+                .file(fileName.toPath())
+                .model("whisper-1")
+                .responseFormat(AudioResponseFormat.VERBOSE_JSON)
+                .temperature(0.2)
+                .timestampGranularity(TranscriptionRequest.TimestampGranularity.WORD)
+                .timestampGranularity(TranscriptionRequest.TimestampGranularity.SEGMENT)
+                .build();
+
+        var futureAudio = openAI.audios().transcribe(audioRequest);
+        var audioResponse = futureAudio.join();
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime)/1000000 ;
+        System.out.println("transcribing took " + duration + " ms");
+        System.out.println(audioResponse.getText());
+        return audioResponse.getText();
+    }
+
 
 }
