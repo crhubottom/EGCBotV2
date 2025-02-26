@@ -9,10 +9,11 @@ import io.github.sashirestela.openai.domain.chat.Chat;
 import io.github.sashirestela.openai.domain.chat.ChatRequest;
 import io.github.stefanbratanov.jvm.openai.*;
 
+import java.io.*;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.*;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.egc.bot.Bot.keys;
 
 public class AIController {
-    public String gptCall(String prompt, String model){
+    public String gptCall(String prompt, String model) {
         OpenAI openAI = OpenAI.newBuilder(keys.get("OPENAI_KEY")).build();
         ChatClient chatClient = openAI.chatClient();
         CreateChatCompletionRequest createChatCompletionRequest = CreateChatCompletionRequest.newBuilder()
@@ -36,10 +37,11 @@ public class AIController {
         out = out.substring(out.indexOf("content=") + 8, out.lastIndexOf(", refusal"));
         return out;
     }
-    public String gptCallWithSystem(String prompt,String systemPrompt,String model){
+
+    public String gptCallWithSystem(String prompt, String systemPrompt, String model) {
         OpenAI openAI = OpenAI.newBuilder(keys.get("OPENAI_KEY")).build();
         ChatClient chatClient = openAI.chatClient();
-        List<ChatMessage> messages = new ArrayList<>(); 
+        List<ChatMessage> messages = new ArrayList<>();
         messages.add(ChatMessage.systemMessage(systemPrompt));
         messages.add(ChatMessage.userMessage(prompt));
         CreateChatCompletionRequest createChatCompletionRequest = CreateChatCompletionRequest.newBuilder()
@@ -52,8 +54,8 @@ public class AIController {
         return out;
     }
 
-    public static String visionCall(String prompt, String fileName){
-        StringBuilder out= new StringBuilder();
+    public static String visionCall(String prompt, String fileName) {
+        StringBuilder out = new StringBuilder();
         var openAI = SimpleOpenAI.builder()
                 .apiKey(keys.get("OPENAI_KEY"))
                 .build();
@@ -90,7 +92,8 @@ public class AIController {
             return null;
         }
     }
-    public void dalleCall(String prompt, String fileName){
+
+    public void dalleCall(String prompt, String fileName) {
         OpenAI openAI = OpenAI.newBuilder(keys.get("OPENAI_KEY")).build();
         ImagesClient imagesClient = openAI.imagesClient();
         CreateImageRequest createImageRequest = CreateImageRequest.newBuilder()
@@ -101,17 +104,18 @@ public class AIController {
 
 
         System.out.println(images.data());
-        String j= images.data().toString();
+        String j = images.data().toString();
         System.out.println(j);
-        String link=j.substring(j.indexOf("url=")+4,j.lastIndexOf(", rev"));
+        String link = j.substring(j.indexOf("url=") + 4, j.lastIndexOf(", rev"));
         System.out.println(link);
-        try(InputStream in = new URL(link).openStream()){
-            Files.copy(in, Paths.get(fileName+".png"), StandardCopyOption.REPLACE_EXISTING);
+        try (InputStream in = new URL(link).openStream()) {
+            Files.copy(in, Paths.get(fileName + ".png"), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
 
         }
     }
-    public boolean ttsCall(String prompt, String fileName){
+
+    public boolean ttsCall(String prompt, String fileName) {
         int ran = (int) (Math.random() * 6);
         SpeechRequest.Voice voice = switch (ran) {
             case 0 -> SpeechRequest.Voice.ONYX;
@@ -135,22 +139,23 @@ public class AIController {
         var futureSpeech = openAI.audios().speak(speechRequest);
         var speechResponse = futureSpeech.join();
         try {
-            var audioFile = new FileOutputStream(fileName+".mp3");
+            var audioFile = new FileOutputStream(fileName + ".mp3");
             audioFile.write(speechResponse.readAllBytes());
             System.out.println(audioFile.getChannel().size() + " bytes");
             audioFile.close();
             return true;
-        }catch (IOException e){
+        } catch (IOException e) {
             return false;
         }
     }
-    public String voiceToText(String fileName){
-       // System.out.println("vts called");
+
+    public String voiceToText(String fileName) {
+        // System.out.println("vts called");
         var openAI = SimpleOpenAI.builder()
                 .apiKey(keys.get("OPENAI_KEY"))
                 .build();
         var audioRequest = TranscriptionRequest.builder()
-                .file(Paths.get(fileName+".wav"))
+                .file(Paths.get(fileName + ".wav"))
                 .model("whisper-1")
                 .responseFormat(AudioResponseFormat.VERBOSE_JSON)
                 .temperature(0.2)
@@ -160,10 +165,11 @@ public class AIController {
 
         var futureAudio = openAI.audios().transcribe(audioRequest);
         var audioResponse = futureAudio.join();
-        System.out.println("output:"+audioResponse.getText());
+        System.out.println("output:" + audioResponse.getText());
         return audioResponse.getText();
     }
-    public String voiceToTextFile(File fileName){
+
+    public String voiceToTextFile(File fileName) {
         long startTime = System.nanoTime();
         var openAI = SimpleOpenAI.builder()
                 .apiKey(keys.get("OPENAI_KEY"))
@@ -180,10 +186,72 @@ public class AIController {
         var futureAudio = openAI.audios().transcribe(audioRequest);
         var audioResponse = futureAudio.join();
         long endTime = System.nanoTime();
-        long duration = (endTime - startTime)/1000000 ;
+        long duration = (endTime - startTime) / 1000000;
         System.out.println("transcribing took " + duration + " ms");
         System.out.println(audioResponse.getText());
         return audioResponse.getText();
+    }
+
+    public String deepgramSpeechToText(File filename) {
+        try {
+            // Specify the URL for the Deepgram API endpoint
+            URI uri = new URI("https://api.deepgram.com/v1/listen?model=nova-3");
+
+            // Open a connection to the URL
+            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
+
+            // Set the request method to POST
+            connection.setRequestMethod("POST");
+
+            // Set request headers
+            connection.setRequestProperty("Authorization", "Token 293bd934719aab9d97c8a04235f525e9def08500");  // Replace YOUR_DEEPGRAM_API_KEY
+            // with your actual API key
+            connection.setRequestProperty("Content-Type", "audio/wav");
+
+            // Enable output (sending data to the server)
+            connection.setDoOutput(true);
+
+            // Get the output stream of the connection
+            OutputStream outputStream = connection.getOutputStream();
+
+            // Read the audio file as binary data and write it to the output stream
+            FileInputStream fileInputStream = new FileInputStream(filename.getPath()); // Replace "youraudio.wav" with the path
+            // to your audio file
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            fileInputStream.close();
+
+            // Close the output stream
+            outputStream.close();
+
+            // Get the response code from the server
+            int responseCode = connection.getResponseCode();
+
+            // Check if the request was successful (status code 200)
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                // Read and print the response from the server
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+                System.out.println(response.substring(response.indexOf("transcript")+13, response.indexOf("confidence")-3));
+                return response.substring(response.indexOf("transcript")+13, response.indexOf("confidence")-3);
+            } else {
+                System.out.println("HTTP request failed with status code " + responseCode);
+            }
+
+            // Disconnect the connection
+            connection.disconnect();
+        } catch (IOException | URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 

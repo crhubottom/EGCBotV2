@@ -27,7 +27,7 @@ import static com.egc.bot.Bot.*;
 
 public class commandListener {
     public static final int SILENCE_THRESHOLD = 200; // Adjust based on testing
-    public static final int MIN_SPEECH_MS = 1000; // Minimum length to consider as speech (ms)
+    public static final int MIN_SPEECH_MS = 500; // Minimum length to consider as speech (ms)
     public static final int SPEECH_TIMEOUT_MS = 500; // Silence duration to consider speech complete (ms)
     public static final int MAX_SPEECH_MS = 5000; // Maximum speech length to prevent runaway recording (ms)
     private static final String[] ACTIVATION_KEYWORD = new String[]{"egc bot","egcbot","egc but","egc bought","hey computer","hey bot"};
@@ -128,7 +128,7 @@ public class commandListener {
 
     private String transcribeAudio(File audioFile){
         System.out.println("transcribeAudio");
-        return(AIc.voiceToTextFile(audioFile));
+        return(AIc.deepgramSpeechToText(audioFile));
     }
 
     private void processCommand(Long userId, String username, String command) throws SQLException, IOException {
