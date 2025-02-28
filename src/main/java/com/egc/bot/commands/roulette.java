@@ -11,6 +11,21 @@ import static com.egc.bot.Bot.inv;
 public class roulette implements ICommand {
     public void run(SlashCommandInteraction ctx) throws SQLException, InterruptedException {
         ctx.deferReply().queue();
+        if(!ctx.getChannelId().equals("1269464838472597577")){
+            int fineAmount;
+            if(inv.checkItem(ctx.getMember().getIdLong(),"Gold",1000)){
+                fineAmount = 1000;
+            }else{
+                fineAmount=inv.getGold(ctx.getMember().getIdLong());
+            }
+            inv.DeleteItem(ctx.getMember().getIdLong(),"Gold",fineAmount);
+            EmbedBuilder eb = new EmbedBuilder();
+            eb.setTitle("Illegal Gambling");
+            eb.setColor(Color.red);
+            eb.setDescription("You have been fined "+fineAmount+" gold.");
+            ctx.replyEmbeds(eb.build()).queue();
+            return;
+        }
         if(ctx.getOption("gold")==null||ctx.getOption("color")==null||ctx.getOption("color").getAsString().isEmpty()){
             ctx.getHook().sendMessage("You must fill all fields.").queue();
             return;
