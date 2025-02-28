@@ -5,6 +5,7 @@ import com.egc.bot.database.tipDB;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,7 +15,7 @@ import static com.egc.bot.Bot.*;
 
 
 public class tipEvent {
-    public String tip() {
+    public String tip() throws IOException, InterruptedException {
         System.out.println("tip called");
         int topMembers = 0;
         VoiceChannel vcID = null;

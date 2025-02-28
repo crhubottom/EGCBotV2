@@ -23,6 +23,7 @@ services:
       - DB_URL=${DB_URL}
       - TESTING_MODE=${TESTING_MODE}
       - joke=${joke}
+      - deep_key=${deep_key}
   mysql:
     image: mysql:8.0.39
     restart: unless-stopped

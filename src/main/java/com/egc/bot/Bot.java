@@ -47,6 +47,7 @@ import java.util.concurrent.*;
 
 public class Bot{
     public static JDA client;
+    public static keyGrabber keys = new keyGrabber();
     public static long traderID;
     public static long receiverID;
     public static long blackjackID;
@@ -55,8 +56,8 @@ public class Bot{
     public static String receiverItem;
     public static int traderCount;
     public static int receiverCount;
-    public static keyGrabber keys = new keyGrabber();
     public static long guildID= Long.parseLong(keys.get("GUILD"));
+    public static String deepKey=keys.get("deep_key");
     public static List<byte[]> recievedBytes = new ArrayList<>();
     //public static AudioReceiveHandler re = new AudioReceiveHandler();
     public static AudioManager man;
@@ -83,7 +84,7 @@ public class Bot{
         client.addEventListener(new ReadyListener());
         client.addEventListener(new ReadyListener());
         client.addEventListener(new SlashCommandListener());
-
+        System.out.println(deepKey);
         client.addEventListener(new respond());
         client.addEventListener(new buttonManager());
         executorService = Executors.newFixedThreadPool(10); // More threads for multiple users
@@ -230,7 +231,13 @@ public class Bot{
             if (ran == 3 && settingsDB.getState("voiceTip")) {
                 System.out.println("tipEvent");
                 tipEvent tip = new tipEvent();
-                tip.tip();
+                try {
+                    tip.tip();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
                 System.out.println("Checking for games");
                 for (int i = 0; i < client.getGuildById(guildID).getMembers().size(); i++) {

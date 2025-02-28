@@ -131,7 +131,7 @@ public class commandListener {
         return(AIc.deepgramSpeechToText(audioFile));
     }
 
-    private void processCommand(Long userId, String username, String command) throws SQLException, IOException {
+    private void processCommand(Long userId, String username, String command) throws SQLException, IOException, InterruptedException {
         boolean audio=true;
         long startTime = System.nanoTime();
         System.out.println("Processing command: " + command);

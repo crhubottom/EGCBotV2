@@ -15,12 +15,16 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.egc.bot.Bot.deepKey;
 import static com.egc.bot.Bot.keys;
 
 public class AIController {
@@ -115,7 +119,8 @@ public class AIController {
         }
     }
 
-    public boolean ttsCall(String prompt, String fileName) {
+    public boolean ttsCall(String prompt, String fileName) throws IOException, InterruptedException {
+        /*
         int ran = (int) (Math.random() * 6);
         SpeechRequest.Voice voice = switch (ran) {
             case 0 -> SpeechRequest.Voice.ONYX;
@@ -145,6 +150,48 @@ public class AIController {
             audioFile.close();
             return true;
         } catch (IOException e) {
+            return false;
+        }
+
+         */
+        String apiKey = deepKey; // Replace DEEPGRAM_API_KEY with your actual API key
+        String voice;
+        String text = "{\"text\": \""+prompt+"\"}";
+        int ran = (int) (Math.random() * 11);
+        voice = switch (ran) {
+            case 0 -> "asteria";
+            case 1 -> "luna";
+            case 2 -> "stella";
+            case 3 -> "athena";
+            case 4 -> "hera";
+            case 5 -> "orion";
+            case 6 -> "arcas";
+            case 7 -> "perseus";
+            case 8 -> "angus";
+            case 9 -> "orpheus";
+            case 10 -> "helios";
+            default -> "zeus";
+        };
+        String url = "https://api.deepgram.com/v1/speak?model=aura-" + voice + "-en";
+        String outputFile = fileName + ".mp3";
+        HttpClient httpClient = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Token " + apiKey)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(text))
+                .build();
+
+        HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+
+        if (response.statusCode() == 200) {
+            byte[] audioData = response.body();
+            Path outputPath = Paths.get(outputFile);
+            Files.write(outputPath, audioData);
+            System.out.println("Audio file saved: " + outputPath);
+            return true;
+        } else {
+            System.err.println("Error: " + response.statusCode() + " - " + response.body());
             return false;
         }
     }
@@ -192,10 +239,13 @@ public class AIController {
         return audioResponse.getText();
     }
 
+    public void deepgramTextToSpeech(String prompt,String fileName) throws IOException, InterruptedException {
+
+    }
     public String deepgramSpeechToText(File filename) {
         try {
             // Specify the URL for the Deepgram API endpoint
-            URI uri = new URI("https://api.deepgram.com/v1/listen?model=nova-3");
+            URI uri = new URI("https://api.deepgram.com/v1/listen?model=nova");
 
             // Open a connection to the URL
             HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
@@ -204,7 +254,11 @@ public class AIController {
             connection.setRequestMethod("POST");
 
             // Set request headers
-            connection.setRequestProperty("Authorization", "Token 293bd934719aab9d97c8a04235f525e9def08500");  // Replace YOUR_DEEPGRAM_API_KEY
+            String token="Token "+deepKey;
+            //System.out.println(token);
+            //connection.setRequestProperty("Authorization", "Token 293bd934719aab9d97c8a04235f525e9def08500");  // Replace YOUR_DEEPGRAM_API_KEY
+            connection.setRequestProperty("Authorization", token);  // Replace YOUR_DEEPGRAM_API_KEY
+
             // with your actual API key
             connection.setRequestProperty("Content-Type", "audio/wav");
 

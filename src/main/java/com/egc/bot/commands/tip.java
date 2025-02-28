@@ -11,7 +11,7 @@ import java.io.IOException;
  */
 public class tip implements ICommand {
 
-    public void run(SlashCommandInteraction ctx) throws IOException {
+    public void run(SlashCommandInteraction ctx) throws IOException, InterruptedException {
         ctx.deferReply().queue();
         if (!ctx.getMember().getVoiceState().inAudioChannel()) {
             ctx.getHook().sendMessage("You need to be in a voice channel").queue();
