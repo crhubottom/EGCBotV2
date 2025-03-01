@@ -1,7 +1,7 @@
                                     A multipurpose Discord bot for my personal server.
                                               Not intended for distribution
 
-                                                      Features
+                                                      Features (Out of date)
 
 
 Stat Tracking:
