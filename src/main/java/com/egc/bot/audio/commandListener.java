@@ -81,6 +81,8 @@ public class commandListener {
                     for (String s : ACTIVATION_KEYWORD) {
                         if (transcription.toLowerCase().contains(s)) {
                             // Extract command (everything after the keyword)
+                            PlayerManager playerManager = PlayerManager.get();
+                            playerManager.play(client.getGuildById(guildID), "confirmation.mp3");
                             String command = transcription.toLowerCase()
                                     .substring(transcription.toLowerCase().indexOf(s)
                                             + s.length())
