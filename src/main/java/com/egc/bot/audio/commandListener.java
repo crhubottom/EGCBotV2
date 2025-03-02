@@ -30,7 +30,7 @@ public class commandListener {
     public static final int MIN_SPEECH_MS = 500; // Minimum length to consider as speech (ms)
     public static final int SPEECH_TIMEOUT_MS = 500; // Silence duration to consider speech complete (ms)
     public static final int MAX_SPEECH_MS = 5000; // Maximum speech length to prevent runaway recording (ms)
-    private static final String[] ACTIVATION_KEYWORD = new String[]{"egc bot","egcbot","egc but","egc bought","hey computer","hey bot"};
+    private static final String[] ACTIVATION_KEYWORD = new String[]{"egc bot","egcbot","egc but","egc bought","hey computer","hey bot", "e g c bot"};
     public static final Map<Long, Boolean> processingUsers = new ConcurrentHashMap<>();
 
 
@@ -81,8 +81,9 @@ public class commandListener {
                     for (String s : ACTIVATION_KEYWORD) {
                         if (transcription.toLowerCase().contains(s)) {
                             // Extract command (everything after the keyword)
+
                             PlayerManager playerManager = PlayerManager.get();
-                            playerManager.play(client.getGuildById(guildID), "confirmation.mp3");
+                            playerManager.play(client.getGuildById(guildID), "ytsearch:Apple Pay Success Sound Effect");
                             String command = transcription.toLowerCase()
                                     .substring(transcription.toLowerCase().indexOf(s)
                                             + s.length())
@@ -137,7 +138,7 @@ public class commandListener {
         boolean audio=true;
         long startTime = System.nanoTime();
         System.out.println("Processing command: " + command);
-        String out = AIc.gptCallWithSystem(command,"You are transcribing voice audio. Your name is EGCBot, a friendly discord bot. This was said by the user"+username+". " +
+        String out = AIc.gptCallWithSystem(command,"You are transcribing voice audio. Your name is E-G-C Bot, a friendly discord bot. This was said by the user"+username+". " +
                 "Say \"play \"+song_name if the user is requesting a song to be played. " +
                 "Say \"skip\" if the user is requesting to skip the song." +
                 "Say \"tip\" if the user is requesting a game tip. " +
