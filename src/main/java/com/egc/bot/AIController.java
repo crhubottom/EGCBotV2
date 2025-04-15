@@ -65,7 +65,7 @@ public class AIController {
                 .build();
 
         var chatRequest = ChatRequest.builder()
-                .model("gpt-4o")
+                .model("gpt-4.1")
                 .messages(List.of(
                         io.github.sashirestela.openai.domain.chat.ChatMessage.UserMessage.of(List.of(
                                 ContentPart.ContentPartText.of(

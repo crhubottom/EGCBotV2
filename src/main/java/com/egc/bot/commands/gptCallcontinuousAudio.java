@@ -41,7 +41,7 @@ public class gptCallcontinuousAudio implements ICommand {
             }
             ss.append("Ignore this(\"role\": \"user\"): From ").append(ctx.getMember().getEffectiveName()).append(": ").append(ctx.getOption("message").getAsString()).append("\n");
             try {
-                String out= AIc.gptCall(ss.toString(),"gpt-4o-mini");
+                String out= AIc.gptCall(ss.toString(),"gpt-4.1");
                 ss.append("Ignore this(\"role\": \"assistant\"):").append(out).append("\n");
                 System.out.println(ss);
                 if(AIc.ttsCall(out,"output")) {

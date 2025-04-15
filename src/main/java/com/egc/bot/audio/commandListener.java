@@ -150,7 +150,7 @@ public class commandListener {
                 "Say \"my_gold\" if the user is asking how much gold they have." +
                 "Say \"top_game\" if the user is asking what the top played game is." +
                 "If the question is cut off or does not make sense, do not respond"+
-                "Respond normally for anything else.","gpt-4o-mini");
+                "Respond normally for anything else.","gpt-4.1");
         System.out.println(out);
         if(out.startsWith("play ")){
             String name=out.substring(4);

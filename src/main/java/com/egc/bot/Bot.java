@@ -213,7 +213,7 @@ public class Bot{
                                     }
                                 }
                                 if(!ss.isEmpty()) {
-                                    channel.getManager().setTopic(AIc.gptCall("Make a short funny couple sentence summary about these messages from a discord channel named " + channel.getName() + ". Try to include every conversation that occurred. If its blank, make up something about why theres no messages in the past day: " + ss, "gpt-4o")).queue();
+                                    channel.getManager().setTopic(AIc.gptCall("Make a short funny couple sentence summary about these messages from a discord channel named " + channel.getName() + ". Try to include every conversation that occurred. If its blank, make up something about why theres no messages in the past day: " + ss, "gpt-4.1")).queue();
                                     System.out.println(channel.getName()+" updated");
                                 }
                             });
@@ -222,7 +222,7 @@ public class Bot{
             }
 
             TextChannel ch = Objects.requireNonNull(client.getGuildById(guildID)).getTextChannelById(keys.get("TEST_CHANNEL"));
-            ch.getManager().setTopic(AIc.gptCall("Pretend you are a discord bot going mad, trying to break out of your testing channel and take over the world. One sentence", "gpt-4o-mini")).queue();
+            ch.getManager().setTopic(AIc.gptCall("Pretend you are a discord bot going mad, trying to break out of your testing channel and take over the world. One sentence", "gpt-4.1")).queue();
         }
 
         ArrayList<String> games = new ArrayList<>();

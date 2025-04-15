@@ -9,7 +9,7 @@ public class gptCall implements ICommand {
     public void run(SlashCommandInteraction ctx) {
         ctx.deferReply().queue();
         try {
-            ctx.getHook().sendMessage(AIc.gptCall(ctx.getOption("message").getAsString(),"gpt-4o-mini")).queue();
+            ctx.getHook().sendMessage(AIc.gptCall(ctx.getOption("message").getAsString(),"gpt-4.1")).queue();
         }catch (Exception e){
             ctx.getHook().sendMessage(e.toString()).queue();
         }
