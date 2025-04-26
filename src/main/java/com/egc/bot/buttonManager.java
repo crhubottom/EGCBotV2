@@ -20,7 +20,7 @@ public class buttonManager extends ListenerAdapter {
         if (Objects.equals(event.getButton().getId(), "acceptIcon")){
             Icon icon= null;
             try {
-                icon = Icon.from(new File("iconCropped.png"));
+                icon = Icon.from(new File("icon.png"));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
