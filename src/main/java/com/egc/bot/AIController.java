@@ -8,6 +8,8 @@ import io.github.sashirestela.openai.domain.audio.TranscriptionRequest;
 import io.github.sashirestela.openai.domain.chat.Chat;
 import io.github.sashirestela.openai.domain.chat.ChatRequest;
 import io.github.stefanbratanov.jvm.openai.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.*;
 import java.io.File;
@@ -18,6 +20,7 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -97,26 +100,45 @@ public class AIController {
         }
     }
 
-    public void dalleCall(String prompt, String fileName) {
-        OpenAI openAI = OpenAI.newBuilder(keys.get("OPENAI_KEY")).build();
-        ImagesClient imagesClient = openAI.imagesClient();
-        CreateImageRequest createImageRequest = CreateImageRequest.newBuilder()
-                .model("dall-e-3")
-                .prompt(prompt)
+    public void dalleCall(String prompt, String fileName)  {
+        String apiKey = keys.get("OPENAI_KEY");  // Your actual API key
+
+        // JSON payload requesting base64
+        String jsonPayload = """
+            {
+              "model": "gpt-image-1",
+              "prompt": "%s",
+              "n": 1,
+              "size": "1024x1024"
+            }
+            """.formatted(prompt);
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.openai.com/v1/images/generations"))
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                 .build();
-        Images images = imagesClient.createImage(createImageRequest);
+try {
+    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    String responseBody = response.body();
 
 
-        System.out.println(images.data());
-        String j = images.data().toString();
-        System.out.println(j);
-        String link = j.substring(j.indexOf("url=") + 4, j.lastIndexOf(", rev"));
-        System.out.println(link);
-        try (InputStream in = new URL(link).openStream()) {
-            Files.copy(in, Paths.get(fileName + ".png"), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
+    // Parse with JSON
+    JSONObject json = new JSONObject(responseBody);
+    JSONArray dataArray = json.getJSONArray("data");
+    String b64String = dataArray.getJSONObject(0).getString("b64_json");
 
-        }
+    // Clean & decode
+    byte[] decodedBytes = Base64.getDecoder().decode(b64String);
+    Files.write(Paths.get(fileName+".png"), decodedBytes);
+
+    System.out.println("Image saved as " + fileName);
+}catch (Exception e){
+    e.printStackTrace();
+}
+
     }
 
     public boolean ttsCall(String prompt, String fileName) throws IOException, InterruptedException {

@@ -11,6 +11,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 import static com.egc.bot.Bot.AIc;
 
@@ -19,25 +20,37 @@ public class changeIcon implements ICommand {
     public void run(SlashCommandInteraction ctx) throws IOException {
         ctx.deferReply().queue();
         String prompt;
-        try {
-            if(ctx.getOption("style")==null||ctx.getOption("style").getAsString()==null||ctx.getOption("style").getAsString().equals("")){
-               prompt="anything";
-            }else{
-                prompt= Objects.requireNonNull(ctx.getOption("style")).getAsString();
-            }
-            System.out.println(prompt);
-            AIc.dalleCall("A 2d circular icon for a discord server with the word \"EGC\" in the center. In the style of: "+prompt+".","icon");
-            java.io.File a = new File("icon.png");
-            BufferedImage bufferedImage = cropImage(a, 90, 90, 870, 860);
-            File outputfile = new File("iconCropped.png");
-            ImageIO.write(bufferedImage, "png", outputfile);
-            FileUpload upload = FileUpload.fromData(outputfile, "iconCropped.png");
-            ctx.getHook().sendFiles(upload).addActionRow(
-                    Button.success("acceptIcon", "Set Icon")).queue();
-        } catch (OpenAIException e) {
-            ctx.getHook().sendMessage(e.toString()).queue();
+        if (ctx.getOption("style") == null || ctx.getOption("style").getAsString().isEmpty()) {
+            prompt = "anything";
+        } else {
+            prompt = Objects.requireNonNull(ctx.getOption("style")).getAsString();
         }
+        String finalPrompt=prompt;
+        CompletableFuture.runAsync(() -> {
+            try {
+                // Call DALL·E (or GPT-image-1) to generate the image
+                AIc.dalleCall("A 2d circular icon for a discord server with the word EGC in the center. In the style of: " + finalPrompt + ".", "icon");
+
+                File imageFile = new File("icon.png");
+
+                // Optional: Wait for file to exist (max 10 seconds)
+                if (!imageFile.exists() || imageFile.length() == 0) {
+                    ctx.getHook().sendMessage("Image generation took too long or failed.").queue();
+                    return;
+                }
+
+                FileUpload upload = FileUpload.fromData(imageFile, "icon.png");
+                ctx.getHook().sendFiles(upload)
+                        .addActionRow(Button.success("acceptIcon", "Set Icon"))
+                        .queue();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                ctx.getHook().sendMessage("Failed to generate image: " + e.getMessage()).queue();
+            }
+        });
     }
+    /*
     private BufferedImage cropImage(File filePath, int x, int y, int w, int h){
         try {
             BufferedImage originalImgage = ImageIO.read(filePath);
@@ -49,4 +62,6 @@ public class changeIcon implements ICommand {
             return null;
         }
     }
+
+     */
 }
