@@ -73,8 +73,6 @@ public class AIController {
                                 ContentPart.ContentPartText.of(
                                         prompt),
                                 ContentPart.ContentPartImageUrl.of(loadImageAsBase64(fileName))))))
-                .temperature(0.0)
-                .maxCompletionTokens(500)
                 .build();
         var chatResponse = openAI.chatCompletions().createStream(chatRequest).join();
         chatResponse.filter(chatResp -> chatResp.getChoices().size() > 0 && chatResp.firstContent() != null)
