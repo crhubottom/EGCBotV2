@@ -58,6 +58,7 @@ public class Bot{
     public static int receiverCount;
     public static long guildID= Long.parseLong(keys.get("GUILD"));
     public static String deepKey=keys.get("deep_key");
+    public static String textModel="gpt-5";
     public static List<byte[]> recievedBytes = new ArrayList<>();
     //public static AudioReceiveHandler re = new AudioReceiveHandler();
     public static AudioManager man;
@@ -213,7 +214,7 @@ public class Bot{
                                     }
                                 }
                                 if(!ss.isEmpty()) {
-                                    channel.getManager().setTopic(AIc.gptCall("Make a short funny couple sentence summary about these messages from a discord channel named " + channel.getName() + ". Try to include every conversation that occurred. If its blank, make up something about why theres no messages in the past day: " + ss, "gpt-4.1")).queue();
+                                    channel.getManager().setTopic(AIc.gptCall("Make a short funny couple sentence summary about these messages from a discord channel named " + channel.getName() + ". Try to include every conversation that occurred. If its blank, make up something about why theres no messages in the past day: " + ss, textModel)).queue();
                                     System.out.println(channel.getName()+" updated");
                                 }
                             });
@@ -222,7 +223,7 @@ public class Bot{
             }
 
             TextChannel ch = Objects.requireNonNull(client.getGuildById(guildID)).getTextChannelById(keys.get("TEST_CHANNEL"));
-            ch.getManager().setTopic(AIc.gptCall("Pretend you are a discord bot going mad, trying to break out of your testing channel and take over the world. One sentence", "gpt-4.1")).queue();
+            ch.getManager().setTopic(AIc.gptCall("Pretend you are a discord bot going mad, trying to break out of your testing channel and take over the world. One sentence", textModel)).queue();
         }
 
         ArrayList<String> games = new ArrayList<>();

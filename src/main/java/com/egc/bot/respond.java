@@ -108,9 +108,9 @@ public class respond extends ListenerAdapter {
                         }
                     }
                     System.out.println(ss);
-                    String out = AIc.gptCall("Continue the story with one message, do not include \"EGCBOT:\" or any other names in that style. It must be under 2000 characters in length: "+ss,"gpt-4.1");
+                    String out = AIc.gptCall("Continue the story with one message, do not include \"EGCBOT:\" or any other names in that style. It must be under 2000 characters in length: "+ss,textModel);
                     try {
-                        AIc.dalleCall(AIc.gptCall("Turn this into a short pg dalle prompt: "+out,"gpt-4.1"),"image");
+                        AIc.dalleCall(AIc.gptCall("Turn this into a short pg dalle prompt: "+out,textModel),"image");
                         java.io.File a=new File("image.png");
                          uploadedImage= FileUpload.fromData(a, "image.png");
                     }catch (OpenAIException e){
@@ -178,10 +178,10 @@ public class respond extends ListenerAdapter {
                         }
                         //System.out.println("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: "+ss);
                         System.out.println(ss);
-                        tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message: "+ss,"gpt-4.1")).queue();
+                        tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message: "+ss,textModel)).queue();
                     }else{
                         System.out.println("ELSE:\n\n"+ss);
-                        tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message: "+ss,"gpt-4.1")).queue();
+                        tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message: "+ss,textModel)).queue();
                     }
 
                 });
@@ -266,10 +266,10 @@ public class respond extends ListenerAdapter {
                              */
                                 //System.out.println("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: "+ss);
                                 System.out.println(ss);
-                                tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message. The Images: section describes the images the user sent: "+ss,"gpt-4.1")).queue();
+                                tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message. The Images: section describes the images the user sent: "+ss,textModel)).queue();
                             }else{
                                 System.out.println("ELSE:\n\n"+ss);
-                                tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message. The Images: section describes the images the user sent: "+ss,"gpt-4.1")).queue();
+                                tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message. The Images: section describes the images the user sent: "+ss,textModel)).queue();
                             }
 
                     });
@@ -326,9 +326,9 @@ public class respond extends ListenerAdapter {
 
                                  */
                                     //System.out.println("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: "+ss);
-                                    tc.sendMessage(AIc.gptCall("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: \n"+ss,"gpt-4.1")).queue();
+                                    tc.sendMessage(AIc.gptCall("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: \n"+ss,textModel)).queue();
                                 }else{
-                                    tc.sendMessage(AIc.gptCall("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: \n"+ss,"gpt-4.1")).queue();
+                                    tc.sendMessage(AIc.gptCall("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: \n"+ss,textModel)).queue();
                             }
 
                         });

@@ -27,8 +27,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.egc.bot.Bot.deepKey;
-import static com.egc.bot.Bot.keys;
+import static com.egc.bot.Bot.*;
 
 public class AIController {
     public String gptCall(String prompt, String model) {
@@ -68,7 +67,7 @@ public class AIController {
                 .build();
 
         var chatRequest = ChatRequest.builder()
-                .model("gpt-4.1")
+                .model(textModel)
                 .messages(List.of(
                         io.github.sashirestela.openai.domain.chat.ChatMessage.UserMessage.of(List.of(
                                 ContentPart.ContentPartText.of(

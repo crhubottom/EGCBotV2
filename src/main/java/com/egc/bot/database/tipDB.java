@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 import static com.egc.bot.Bot.AIc;
+import static com.egc.bot.Bot.textModel;
 
 
 public class tipDB {
@@ -147,9 +148,9 @@ public class tipDB {
                 if (rows == 0) {
                     ran1= (int) (Math.random() * 2);
                     if(ran1==1){
-                        return AIc.gptCallWithSystem("Game: "+game+"\n Players: "+players,"Make fun of the players playing the listed game. Also make fun of the game. Be harsh and rude. One sentence max.","gpt-4.1");
+                        return AIc.gptCallWithSystem("Game: "+game+"\n Players: "+players,"Make fun of the players playing the listed game. Also make fun of the game. Be harsh and rude. One sentence max.",textModel);
                     }
-                    return AIc.gptCall("give me a short funny or intentionally bad and wrong tip about "+game+". Say nothing but the tip.","gpt-4.1");
+                    return AIc.gptCall("give me a short funny or intentionally bad and wrong tip about "+game+". Say nothing but the tip.",textModel);
                 }
                 rs.first();
                 int ran = (int) (Math.random() * rows);
@@ -166,10 +167,10 @@ public class tipDB {
         }else{
             ran1= (int) (Math.random() * 2);
             if(ran1==1){
-                return AIc.gptCallWithSystem("Game: "+game+"\n Players: "+players,"Make fun of the players playing the listed game. Also make fun of the game. Be harsh and rude. One sentence max.","gpt-4.1");
+                return AIc.gptCallWithSystem("Game: "+game+"\n Players: "+players,"Make fun of the players playing the listed game. Also make fun of the game. Be harsh and rude. One sentence max.",textModel);
 
             }
-            return AIc.gptCall("give me a short funny or intentionally bad and wrong tip about "+game+". Say nothing but the tip.","gpt-4.1");
+            return AIc.gptCall("give me a short funny or intentionally bad and wrong tip about "+game+". Say nothing but the tip.",textModel);
         }
 
     }

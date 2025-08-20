@@ -4,6 +4,7 @@ import com.egc.bot.commands.interfaces.ICommand;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 
 import static com.egc.bot.Bot.AIc;
+import static com.egc.bot.Bot.textModel;
 
 public class gptCallcontinuous implements ICommand {
     StringBuilder ss = new StringBuilder();
@@ -18,7 +19,7 @@ public class gptCallcontinuous implements ICommand {
             }
             ss.append("Ignore this(\"role\": \"user\"): From ").append(ctx.getMember().getEffectiveName()).append(": ").append(ctx.getOption("message").getAsString()).append("\n");
             try {
-                String out = AIc.gptCall(ss.toString(),"gpt-4.1");
+                String out = AIc.gptCall(ss.toString(),textModel);
                 ss.append("Ignore this(\"role\": \"assistant\"):").append(out).append("\n");
                 System.out.println(ss);
                 ctx.getHook().sendMessage(out).queue();
