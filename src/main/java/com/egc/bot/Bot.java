@@ -191,36 +191,51 @@ public class Bot{
                 throw new RuntimeException(e);
             }
             List<TextChannel> channels = Objects.requireNonNull(client.getGuildById(guildID)).getTextChannels();
+
+            OffsetDateTime cutoff = OffsetDateTime.now().minusDays(1);
+
             for (TextChannel channel : channels) {
-                if (!channel.getId().equals(keys.get("TEST_CHANNEL"))) {
-                    MessageHistory messagesHistory = channel.getHistoryBefore(channel.getLatestMessageId(), 100).complete();
-                    StringBuilder ss = new StringBuilder();
-                    OffsetDateTime offsetDateTime = OffsetDateTime.now().minusDays(1);
-                    channel.getHistory().retrievePast(2)
-                            .map(messages -> messages.get(0))
-                            .queue(message -> {
-                                if(message.getTimeCreated().isAfter(offsetDateTime)) {
-                                    if (!message.getAuthor().isBot() && !message.getContentDisplay().isEmpty()) {
+                if (channel.getId().equals(keys.get("TEST_CHANNEL"))) continue;
 
-                                        ss.append(message.getMember().getNickname()).append(": ").append(message.getContentDisplay() + "\n");
-                                    }
-                                }
-                                List<Message> messages = messagesHistory.getRetrievedHistory();
-                                for (int i = messages.size() - 1; i >= 0; i--) {
-                                    if(messages.get(i).getTimeCreated().isAfter(offsetDateTime)) {
-                                        if (!messages.get(i).getAuthor().isBot() && !messages.get(i).getContentDisplay().isEmpty()) {
-                                            ss.append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay() + "\n");
-                                        }
-                                    }
-                                }
-                                if(!ss.isEmpty()) {
-                                    channel.getManager().setTopic(AIc.gptCall("Make a short funny couple sentence summary about these messages from a discord channel named " + channel.getName() + ". Try to include every conversation that occurred. If its blank, make up something about why theres no messages in the past day: " + ss, textModel)).queue();
-                                    System.out.println(channel.getName()+" updated");
-                                }
-                            });
+                channel.getHistory().retrievePast(100).queue(messages -> {
+                    // messages is newest -> oldest; flip it to oldest -> newest
+                    Collections.reverse(messages);
 
-                }
+                    StringBuilder sb = new StringBuilder();
+
+                    for (Message m : messages) {
+                        // Only last 24h
+                        if (m.getTimeCreated().isBefore(cutoff)) continue;
+
+                        // Skip bots & empty
+                       // if (m.getAuthor().isBot()) continue;
+                        String content = m.getContentDisplay().trim();
+                        if (content.isEmpty()) continue;
+
+                        // Safe display name
+                        String display =
+                                m.getMember() != null ? m.getMember().getEffectiveName() : m.getAuthor().getName();
+
+                        sb.append(display).append(": ").append(content).append('\n');
+                    }
+
+                    // Always call GPT; let the prompt handle blank summaries too
+                    String transcript = sb.toString();
+                    String prompt = "Make a short funny couple sentence summary about these messages from a " +
+                            "discord channel named " + channel.getName() +
+                            ". Try to include every conversation that occurred. If it's blank, " +
+                            "make up something about why there are no messages in the past day:\n" +
+                            transcript;
+
+                    String topic = AIc.gptCall(prompt, textModel);
+                    System.out.println(prompt);
+                    channel.getManager().setTopic(topic).queue(
+                            success -> System.out.println(channel.getName() + " updated"),
+                            error -> System.err.println("Failed to update " + channel.getName() + ": " + error.getMessage())
+                    );
+                });
             }
+
 
             TextChannel ch = Objects.requireNonNull(client.getGuildById(guildID)).getTextChannelById(keys.get("TEST_CHANNEL"));
             ch.getManager().setTopic(AIc.gptCall("Pretend you are a discord bot going mad, trying to break out of your testing channel and take over the world. One sentence", textModel)).queue();
