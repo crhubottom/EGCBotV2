@@ -22,7 +22,7 @@ public class PlayerManager {
 
     private PlayerManager() {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager(true, new WebWithThumbnail(), new AndroidMusicWithThumbnail(), new TvHtml5EmbeddedWithThumbnail(), new MusicWithThumbnail());
-        Web.setPoTokenAndVisitorData("MnRfde1yzFdN6V9N9r7Rx1NDJ8dYyacDQr-r6LGXBWH_qF3LjBIuf54KRGiRl827asNYBnhWdXMe_cpxHcbIfPwiIa2CXlHOnkEkxi6m0Wveq_G-173HhQCDYVvoCbc_KJlxLL8_XpxcgzyqWkRXxOuVDBPk5g==","CgszcGpHLTh4NHRnVSiZtN-5BjIKCgJVUxIEGgAgSA%3D%3D");
+        youtube.useOauth2("1//06ViJZ80NaUC2CgYIARAAGAYSNwF-L9IrK-vpUfCxvbJniP3grSwMsoMBp7lUKEfavEG10OM1nSYi7svFQDHcDvyrpybR5je-ldc",true);
         this.audioPlayerManager.registerSourceManager(youtube);
         AudioSourceManagers.registerRemoteSources(audioPlayerManager, com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.class);
         AudioSourceManagers.registerRemoteSources(audioPlayerManager);
