@@ -14,6 +14,8 @@ import net.dv8tion.jda.api.entities.Guild;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.egc.bot.Bot.keys;
+
 public class PlayerManager {
 
     private static PlayerManager INSTANCE;
@@ -22,7 +24,7 @@ public class PlayerManager {
 
     private PlayerManager() {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager(true, new WebWithThumbnail(), new AndroidMusicWithThumbnail(), new TvHtml5EmbeddedWithThumbnail(), new MusicWithThumbnail());
-        youtube.useOauth2("1//06ViJZ80NaUC2CgYIARAAGAYSNwF-L9IrK-vpUfCxvbJniP3grSwMsoMBp7lUKEfavEG10OM1nSYi7svFQDHcDvyrpybR5je-ldc",true);
+        youtube.useOauth2(keys.get("Oauth"),true);
         this.audioPlayerManager.registerSourceManager(youtube);
         AudioSourceManagers.registerRemoteSources(audioPlayerManager, com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.class);
         AudioSourceManagers.registerRemoteSources(audioPlayerManager);
