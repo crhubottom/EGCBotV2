@@ -8,6 +8,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import dev.lavalink.youtube.YoutubeAudioSourceManager;
+import dev.lavalink.youtube.YoutubeSourceOptions;
 import dev.lavalink.youtube.clients.*;
 import net.dv8tion.jda.api.entities.Guild;
 
@@ -23,7 +24,10 @@ public class PlayerManager {
     private final AudioPlayerManager audioPlayerManager = new DefaultAudioPlayerManager();
 
     private PlayerManager() {
-        dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager(true, new WebWithThumbnail(), new AndroidMusicWithThumbnail(), new TvHtml5EmbeddedWithThumbnail(), new MusicWithThumbnail());
+        YoutubeSourceOptions options = new YoutubeSourceOptions().setRemoteCipher("https://cipher.kikkia.dev/","","");
+        options.setAllowSearch(true);
+        //dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager(true, new TvHtml5Embedded(),new Tv(), new WebEmbedded());
+        YoutubeAudioSourceManager youtube = new YoutubeAudioSourceManager(options,new TvHtml5Embedded(),new Tv(), new WebEmbedded());
         youtube.useOauth2(keys.get("Oauth"),true);
         this.audioPlayerManager.registerSourceManager(youtube);
         AudioSourceManagers.registerRemoteSources(audioPlayerManager, com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.class);
