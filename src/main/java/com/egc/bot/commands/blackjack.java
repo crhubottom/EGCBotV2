@@ -3,8 +3,10 @@ package com.egc.bot.commands;
 import com.egc.bot.commands.interfaces.ICommand;
 import com.egc.bot.events.blackjackController;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 import java.awt.*;
 import java.sql.SQLException;
@@ -43,14 +45,28 @@ public class blackjack implements ICommand {
             ctx.getHook().sendMessage("You must enter a correct amount of gold).").queue();
             return;
         }
-        if(inv.checkItem(ctx.getMember().getIdLong(),"Gold",ctx.getOption("gold").getAsInt())){
-            blackjackID=ctx.getMember().getIdLong();
-            ctx.getHook().sendMessageEmbeds(bj.start(ctx.getOption("gold").getAsInt(),ctx.getMember().getIdLong()).build())
-                    .addActionRow(net.dv8tion.jda.api.interactions.components.buttons.Button.danger("stand", "Stand"), Button.success("hit", "Hit")).queue();
-        }else{
-            ctx.getHook().sendMessage("You don't have enough Gold").queue();
+        if (inv.checkItem(ctx.getMember().getIdLong(), "Gold", ctx.getOption("gold").getAsInt())) {
+            blackjackID = ctx.getMember().getIdLong();
 
+            MessageEmbed embed = bj.start(
+                    ctx.getOption("gold").getAsInt(),
+                    ctx.getMember().getIdLong()
+            ).build();
+
+            ctx.getHook()
+                    .sendMessageEmbeds(embed)
+                    .setComponents(
+                            ActionRow.of(
+                                    Button.danger("stand", "Stand"),
+                                    Button.success("hit", "Hit")
+                            )
+                    )
+                    .queue();
+        } else {
+            ctx.getHook().sendMessage("You don't have enough Gold").queue();
         }
+
+
     }
 
 

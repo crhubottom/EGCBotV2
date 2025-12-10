@@ -2,9 +2,10 @@ package com.egc.bot.commands;
 
 import com.egc.bot.commands.interfaces.ICommand;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 import java.awt.*;
 
@@ -49,10 +50,17 @@ public class tradeItem implements ICommand {
                     EmbedBuilder eb = new EmbedBuilder();
                     eb.setTitle( ctx.getMember().getNickname()+" <--> "+username, null);
                     eb.setColor(Color.red);
-                    eb.setDescription(ctx.getMember().getNickname()+" offers:\n"+ctx.getOption("youritem").getAsString()+": " +ctx.getOption("yourcount").getAsInt()+"\n For "+username+"'s:\n"+ctx.getOption("theiritem").getAsString()+": "+ctx.getOption("theircount").getAsInt()+"\n\n Awaiting Confirmation.");
-                    ctx.getHook().sendMessageEmbeds(eb.build()).addActionRow(
-                            Button.success("acceptTrade", "Accept"),Button.danger("denyTrade", "Deny")).queue();
+                    eb.setDescription(ctx.getMember().getNickname()+" offers:\n"+ctx.getOption("youritem").getAsString()+": " +ctx.getOption("yourcount").getAsInt()+"\n For "+username+"'s:\n"+ctx.getOption("theiritem").getAsString()+": "+ctx.getOption("theircount").getAsInt()+"\n\n Awaiting Confirmation.");ctx.getHook()
+                            .sendMessageEmbeds(eb.build())
+                            .setComponents(
+                                    ActionRow.of(
+                                            Button.success("acceptTrade", "Accept"),
+                                            Button.danger("denyTrade", "Deny")
+                                    )
+                            )
+                            .queue();
                     return;
+
                 }
             }else if(ctx.getOption("yourcount").getAsInt()==0){
                 if (!inv.checkItem(id, ctx.getOption("theiritem").getAsString(), ctx.getOption("theircount").getAsInt())) {
@@ -70,9 +78,17 @@ public class tradeItem implements ICommand {
                     eb.setTitle( ctx.getMember().getNickname()+" <--> "+username, null);
                     eb.setColor(Color.red);
                     eb.setDescription(ctx.getMember().getNickname()+" offers:\n"+ctx.getOption("youritem").getAsString()+": " +ctx.getOption("yourcount").getAsInt()+"\n For "+username+"'s:\n"+ctx.getOption("theiritem").getAsString()+": "+ctx.getOption("theircount").getAsInt()+"\n\n Awaiting Confirmation.");
-                    ctx.getHook().sendMessageEmbeds(eb.build()).addActionRow(
-                            Button.success("acceptTrade", "Accept"),Button.danger("denyTrade", "Deny")).queue();
+                    ctx.getHook()
+                            .sendMessageEmbeds(eb.build())
+                            .setComponents(
+                                    ActionRow.of(
+                                            Button.success("acceptTrade", "Accept"),
+                                            Button.danger("denyTrade", "Deny")
+                                    )
+                            )
+                            .queue();
                     return;
+
                 }
             }else if (!inv.checkItem(ctx.getMember().getIdLong(), ctx.getOption("youritem").getAsString(), ctx.getOption("yourcount").getAsInt())) {
                 ctx.getHook().sendMessage("You dont have enough "+ctx.getOption("youritem").getAsString()+" to trade.").queue();
@@ -104,8 +120,16 @@ public class tradeItem implements ICommand {
         //eb.setColor(new Color(255, 0, 54));
 
         eb.setDescription(ctx.getMember().getNickname()+" offers:\n"+ctx.getOption("youritem").getAsString()+": " +ctx.getOption("yourcount").getAsInt()+"\n For "+username+"'s:\n"+ctx.getOption("theiritem").getAsString()+": "+ctx.getOption("theircount").getAsInt()+"\n\n Awaiting Confirmation.");
-            ctx.getHook().sendMessageEmbeds(eb.build()).addActionRow(
-                Button.success("acceptTrade", "Accept"),Button.danger("denyTrade", "Deny")).queue();
+        ctx.getHook()
+                .sendMessageEmbeds(eb.build())
+                .setComponents(
+                        ActionRow.of(
+                                Button.success("acceptTrade", "Accept"),
+                                Button.danger("denyTrade", "Deny")
+                        )
+                )
+                .queue();
+
     }
 
 

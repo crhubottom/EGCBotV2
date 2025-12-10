@@ -2,8 +2,9 @@ package com.egc.bot.commands;
 
 import com.egc.bot.commands.interfaces.ICommand;
 import io.github.stefanbratanov.jvm.openai.OpenAIException;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 import javax.imageio.ImageIO;
@@ -40,9 +41,15 @@ public class changeIcon implements ICommand {
                 }
 
                 FileUpload upload = FileUpload.fromData(imageFile, "icon.png");
-                ctx.getHook().sendFiles(upload)
-                        .addActionRow(Button.success("acceptIcon", "Set Icon"))
+                ctx.getHook()
+                        .sendFiles(upload)
+                        .setComponents(
+                                ActionRow.of(
+                                        Button.success("acceptIcon", "Set Icon")
+                                )
+                        )
                         .queue();
+
 
             } catch (Exception e) {
                 e.printStackTrace();

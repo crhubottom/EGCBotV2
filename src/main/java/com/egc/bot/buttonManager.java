@@ -5,7 +5,6 @@ import net.dv8tion.jda.api.entities.Icon;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 import java.awt.*;
 import java.io.File;
@@ -17,7 +16,7 @@ import static com.egc.bot.Bot.*;
 
 public class buttonManager extends ListenerAdapter {
     public void onButtonInteraction(ButtonInteractionEvent event) {
-        if (Objects.equals(event.getButton().getId(), "acceptIcon")){
+        if (Objects.equals(event.getButton().getCustomId(), "acceptIcon")){
             Icon icon= null;
             try {
                 icon = Icon.from(new File("icon.png"));
@@ -29,7 +28,7 @@ public class buttonManager extends ListenerAdapter {
         }
         //System.out.println("Button Press: "+receiverID+": "+client.getGuildById(guildID).getMemberById(receiverID).getNickname());
 
-        if (Objects.equals(event.getButton().getId(), "acceptTrade")&&event.getMember().getIdLong()==receiverID){
+        if (Objects.equals(event.getButton().getCustomId(), "acceptTrade")&&event.getMember().getIdLong()==receiverID){
             System.out.println("Accept: "+receiverID+": "+client.getGuildById(guildID).getMemberById(receiverID).getNickname());
             EmbedBuilder eb = new EmbedBuilder();
             eb.setTitle( "Trade Accepted.", null);
@@ -43,10 +42,10 @@ public class buttonManager extends ListenerAdapter {
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
-        }else if(Objects.equals(event.getButton().getId(), "acceptTrade")&&event.getMember().getIdLong()!=receiverID){
+        }else if(Objects.equals(event.getButton().getCustomId(), "acceptTrade")&&event.getMember().getIdLong()!=receiverID){
             event.deferEdit().queue();
         }
-        if (Objects.equals(event.getButton().getId(), "denyTrade")&&event.getMember().getIdLong()==receiverID){
+        if (Objects.equals(event.getButton().getCustomId(), "denyTrade")&&event.getMember().getIdLong()==receiverID){
             System.out.println("Deny: "+receiverID+": "+client.getGuildById(guildID).getMemberById(receiverID).getNickname());
 
             EmbedBuilder eb = new EmbedBuilder();
@@ -56,18 +55,18 @@ public class buttonManager extends ListenerAdapter {
             //eb.setColor(new Color(255, 0, 54));
             MessageEmbed embed = eb.build();
             event.editMessageEmbeds(embed).setComponents().queue();
-        }else if(Objects.equals(event.getButton().getId(), "denyTrade")&&event.getMember().getIdLong()!=receiverID){
+        }else if(Objects.equals(event.getButton().getCustomId(), "denyTrade")&&event.getMember().getIdLong()!=receiverID){
             event.deferEdit().queue();
         }
 
-        if (Objects.equals(event.getButton().getId(), "hit")&&event.getMember().getIdLong()==blackjackID){
+        if (Objects.equals(event.getButton().getCustomId(), "hit")&&event.getMember().getIdLong()==blackjackID){
             event.deferEdit().queue();
             bj.hit(event.getMessage().getIdLong(),event.getChannelIdLong());
 
-        }else if(Objects.equals(event.getButton().getId(), "hit")&&event.getMember().getIdLong()!=blackjackID){
+        }else if(Objects.equals(event.getButton().getCustomId(), "hit")&&event.getMember().getIdLong()!=blackjackID){
             event.deferEdit().queue();
         }
-        if (Objects.equals(event.getButton().getId(), "stand")&&event.getMember().getIdLong()==blackjackID) {
+        if (Objects.equals(event.getButton().getCustomId(), "stand")&&event.getMember().getIdLong()==blackjackID) {
             try {
                 event.deferEdit().queue();
                 bj.stand(event.getMessage().getIdLong(),event.getChannelIdLong());
@@ -76,7 +75,7 @@ public class buttonManager extends ListenerAdapter {
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
-        }else if(Objects.equals(event.getButton().getId(), "stand")&&event.getMember().getIdLong()!=blackjackID){
+        }else if(Objects.equals(event.getButton().getCustomId(), "stand")&&event.getMember().getIdLong()!=blackjackID){
             event.deferEdit().queue();
         }
 
