@@ -30,7 +30,7 @@ public class changeIcon implements ICommand {
         CompletableFuture.runAsync(() -> {
             try {
                 // Call DALL·E (or GPT-image-1) to generate the image
-                AIc.dalleCall("A 2d circular icon for a discord server with the word EGC in the center. In the style of: " + finalPrompt + ".", "icon");
+                AIc.dalleCall("A 2d square 512x512 icon for a discord server with the word EGC in the center. In the style of: " + finalPrompt + ".", "icon");
 
                 File imageFile = new File("icon.png");
 
