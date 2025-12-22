@@ -58,7 +58,7 @@ public class Bot{
     public static int receiverCount;
     public static long guildID= Long.parseLong(keys.get("GUILD"));
     public static String deepKey=keys.get("deep_key");
-    public static String textModel="gpt-5";
+    public static String textModel="gpt-5.2";
     public static List<byte[]> recievedBytes = new ArrayList<>();
     //public static AudioReceiveHandler re = new AudioReceiveHandler();
     public static AudioManager man;

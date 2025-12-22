@@ -103,7 +103,7 @@ public class AIController {
         // JSON payload requesting base64
         String jsonPayload = """
             {
-              "model": "gpt-image-1",
+              "model": "gpt-image-1.5",
               "prompt": "%s",
               "n": 1,
               "size": "1024x1024"
