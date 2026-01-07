@@ -29,6 +29,9 @@ public class toggle implements ICommand {
             case "reply":
                 ctx.getHook().sendMessage(settingsDB.toggleState("randReply")).queue();
                 break;
+            case "autoTTS":
+                ctx.getHook().sendMessage(settingsDB.toggleState("autoTTS")).queue();
+                break;
             case "all":
                 ctx.getHook().sendMessage(settingsDB.toggleAll()).queue();
                 break;

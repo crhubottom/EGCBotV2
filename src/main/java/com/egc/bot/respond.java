@@ -1,5 +1,6 @@
 package com.egc.bot;
 
+import com.egc.bot.audio.PlayerManager;
 import com.egc.bot.database.messageDB;
 import com.egc.bot.database.settingsDB;
 import com.egc.bot.events.countTracker;
@@ -17,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
@@ -189,8 +191,19 @@ public class respond extends ListenerAdapter {
         }
 
 
-
-
+    System.out.println(event.getChannel().getId());
+    if(event.getChannel().getId().equals("1207940576138371115")){
+                if(autoTTS){
+                    try {
+                        if(AIc.ttsCall(message,"output")) {
+                            PlayerManager playerManager = PlayerManager.get();
+                            playerManager.play(event.getGuild(), "output.mp3");
+                        }
+                    } catch (IOException | InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        }
 
 
             if(message.contains("<@1237574116328865873>")&&!event.getChannel().getId().equals("1268086672420245556")){

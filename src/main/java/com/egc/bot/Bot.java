@@ -55,6 +55,7 @@ public class Bot{
     public static String traderItem;
     public static String receiverItem;
     public static int traderCount;
+    public static boolean autoTTS = false;
     public static int receiverCount;
     public static long guildID= Long.parseLong(keys.get("GUILD"));
     public static String deepKey=keys.get("deep_key");

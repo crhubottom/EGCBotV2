@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import static com.egc.bot.Bot.autoTTS;
+
 public class settingsDB {
     public static void initialize(){
         ArrayList<String> settings = new ArrayList<>();
@@ -60,6 +62,10 @@ public class settingsDB {
 
         PreparedStatement ps2;
         boolean oldState;
+        if(settingName.equals("autoTTS")){
+            autoTTS=!autoTTS;
+            return "autoTTS is now "+autoTTS;
+        }
         try {
             ps = Database.con.prepareStatement("select * from settings where name=?");
             ps.setString(1, settingName);
