@@ -36,7 +36,7 @@ public class toggle implements ICommand {
                 ctx.getHook().sendMessage(settingsDB.toggleAll()).queue();
                 break;
             default:
-                ctx.getHook().sendMessage("Incorrect option. Options are \"reply\", \"frankie\", \"tip\", \"all\"").queue();
+                ctx.getHook().sendMessage("Incorrect option. Options are \"reply\", \"frankie\", \"tip\", \"autoTTS\", \"all\"").queue();
                 break;
         }
     }
