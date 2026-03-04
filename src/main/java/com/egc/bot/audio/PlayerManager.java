@@ -27,7 +27,7 @@ public class PlayerManager {
         YoutubeSourceOptions options = new YoutubeSourceOptions().setRemoteCipher("https://cipher.kikkia.dev/","","");
         options.setAllowSearch(true);
         //dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager(true, new TvHtml5Embedded(),new Tv(), new WebEmbedded());
-        YoutubeAudioSourceManager youtube = new YoutubeAudioSourceManager(options,new TvHtml5Embedded(),new Tv(), new WebEmbedded());
+        YoutubeAudioSourceManager youtube = new YoutubeAudioSourceManager(options,new TvHtml5Simply(),new Tv(), new WebEmbedded());
         youtube.useOauth2(keys.get("Oauth"),true);
         this.audioPlayerManager.registerSourceManager(youtube);
         AudioSourceManagers.registerRemoteSources(audioPlayerManager, com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.class);
