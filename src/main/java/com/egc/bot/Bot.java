@@ -80,6 +80,7 @@ public class Bot{
 
         client.updateCommands().addCommands(
                 Command.slash("stop", "Stops the bot", new Stop()),
+
                 Command.slash("trivia", "Plays a round of trivia", new trivia()),
                 Command.slash("joke", "Tells a joke", new joke()),
                 Command.slash("closures", "Displays Starbase Road Closures", new closures()),
@@ -167,7 +168,7 @@ public class Bot{
                         .addOption(OptionType.STRING, "status", "the content")
         ).queue();
         client.awaitReady();
-        connectToVoiceChannel();
+        //connectToVoiceChannel();
         settingsDB.initialize();
         client.getPresence().setActivity(Activity.watching("The World Burn"));
         if(Objects.equals(keys.get("TESTING_MODE"), "FALSE")) {
