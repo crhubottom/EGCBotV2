@@ -25,6 +25,7 @@ services:
       - joke=${joke}
       - deep_key=${deep_key}
       - Oauth=${Oauth}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
   mysql:
     image: mysql:8.0.39
     restart: unless-stopped
