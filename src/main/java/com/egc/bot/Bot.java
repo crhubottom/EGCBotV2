@@ -349,7 +349,7 @@ public class Bot{
         }
         AudioManager audioManager = guild.getAudioManager();
         //receiverHandler = new AudioReceiveHandler();
-        audioManager.setReceivingHandler(receiverHandler);
+        //audioManager.setReceivingHandler(receiverHandler);
         // Connect to the voice channel
         audioManager.openAudioConnection(voiceChannel);
         System.out.println("Connected to voice channel: " + voiceChannel.getName());
