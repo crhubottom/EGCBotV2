@@ -1,5 +1,6 @@
 package com.egc.bot;
 
+import club.minnced.discord.jdave.interop.JDaveSessionFactory;
 import com.egc.bot.audio.AudioReceiveHandler;
 import com.egc.bot.audio.commandListener;
 import com.egc.bot.commands.*;
@@ -11,6 +12,7 @@ import io.grpc.LoadBalancerRegistry;
 import io.grpc.internal.PickFirstLoadBalancerProvider;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.audio.AudioModuleConfig;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
@@ -67,7 +69,8 @@ public class Bot{
     public static AudioReceiveHandler receiverHandler;
     public Bot() throws InterruptedException {
         String token = keys.get("DISCORD_KEY");
-        client = JDABuilder.createDefault(token).enableIntents(GatewayIntent.MESSAGE_CONTENT).enableCache(CacheFlag.ACTIVITY).enableIntents(GatewayIntent.GUILD_PRESENCES).enableIntents(GatewayIntent.GUILD_MEMBERS).setMemberCachePolicy(MemberCachePolicy.ALL).build();
+        client = JDABuilder.createDefault(token).enableIntents(GatewayIntent.MESSAGE_CONTENT).enableCache(CacheFlag.ACTIVITY).enableIntents(GatewayIntent.GUILD_PRESENCES).enableIntents(GatewayIntent.GUILD_MEMBERS).setMemberCachePolicy(MemberCachePolicy.ALL)
+                .setAudioModuleConfig(new AudioModuleConfig().withDaveSessionFactory(new JDaveSessionFactory())).build();
         LoadBalancerRegistry.getDefaultRegistry().register(new PickFirstLoadBalancerProvider());
         new Database();
         client.addEventListener(new ReadyListener());
@@ -348,14 +351,14 @@ public class Bot{
             return;
         }
         AudioManager audioManager = guild.getAudioManager();
-        //receiverHandler = new AudioReceiveHandler();
-        //audioManager.setReceivingHandler(receiverHandler);
+        receiverHandler = new AudioReceiveHandler();
+        audioManager.setReceivingHandler(receiverHandler);
         // Connect to the voice channel
         audioManager.openAudioConnection(voiceChannel);
         System.out.println("Connected to voice channel: " + voiceChannel.getName());
         // Start audio processing
-        //commandListener listener= new commandListener();
-        //listener.startAudioProcessing();
+        commandListener listener= new commandListener();
+        listener.startAudioProcessing();
     }
     }
 
