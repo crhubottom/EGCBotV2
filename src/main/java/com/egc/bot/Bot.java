@@ -348,14 +348,14 @@ public class Bot{
             return;
         }
         AudioManager audioManager = guild.getAudioManager();
-        receiverHandler = new AudioReceiveHandler();
+        //receiverHandler = new AudioReceiveHandler();
         audioManager.setReceivingHandler(receiverHandler);
         // Connect to the voice channel
         audioManager.openAudioConnection(voiceChannel);
         System.out.println("Connected to voice channel: " + voiceChannel.getName());
         // Start audio processing
-        commandListener listener= new commandListener();
-        listener.startAudioProcessing();
+        //commandListener listener= new commandListener();
+        //listener.startAudioProcessing();
     }
     }
 
