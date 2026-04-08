@@ -53,6 +53,7 @@
                         <artifactId>rewrite-java-dependencies</artifactId>
                         <version>1.37.0</version>
                     </dependency>
+
                     <dependency>
                         <groupId>net.dv8tion</groupId>
                         <artifactId>JDA</artifactId>
@@ -137,6 +138,7 @@
             <artifactId>google-cloud-speech</artifactId>
             <version>4.38.0</version>
         </dependency>
+
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>

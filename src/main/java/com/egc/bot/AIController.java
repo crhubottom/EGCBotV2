@@ -8,6 +8,12 @@ import io.github.sashirestela.openai.domain.audio.TranscriptionRequest;
 import io.github.sashirestela.openai.domain.chat.Chat;
 import io.github.sashirestela.openai.domain.chat.ChatRequest;
 import io.github.stefanbratanov.jvm.openai.*;
+import net.andrewcpu.elevenlabs.builders.SpeechGenerationBuilder;
+import net.andrewcpu.elevenlabs.enums.ElevenLabsVoiceModel;
+import net.andrewcpu.elevenlabs.enums.GeneratedAudioOutputFormat;
+import net.andrewcpu.elevenlabs.enums.StreamLatencyOptimization;
+import net.andrewcpu.elevenlabs.model.voice.Voice;
+import net.andrewcpu.elevenlabs.model.voice.VoiceSettings;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -172,10 +178,10 @@ try {
             return false;
         }
 
-         */
+
         String apiKey = deepKey; // Replace DEEPGRAM_API_KEY with your actual API key
         String voice;
-        String text = "{\"text\": \""+prompt+"\"}";
+
         int ran = (int) (Math.random() * 40);
         voice = switch (ran) {
             case 0 -> "odysseus";
@@ -242,6 +248,42 @@ try {
             System.err.println("Error: " + response.statusCode() + " - " + response.body());
             return false;
         }
+
+         */
+        String apiKey = System.getenv("ELEVENLABS_API_KEY");
+        String voiceId = "JBFqnCBsd6RMkjVDRZzb"; // example voice from docs
+        String url = "https://api.elevenlabs.io/v3/text-to-speech/" + voiceId
+                + "?output_format=mp3_44100_128";
+
+        String json = """
+            {
+              "text": "Hello from Java using the ElevenLabs API.",
+              "model_id": "eleven_multilingual_v2"
+            }
+            """;
+
+        HttpClient client = HttpClient.newHttpClient();
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("xi-api-key", apiKey)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<byte[]> response = client.send(
+                request,
+                HttpResponse.BodyHandlers.ofByteArray()
+        );
+
+        if (response.statusCode() == 200) {
+            Files.write(Path.of("speech.mp3"), response.body());
+            System.out.println("Saved speech.mp3");
+        } else {
+            System.out.println("Request failed: " + response.statusCode());
+            System.out.println(new String(response.body()));
+        }
+        return true;
     }
 
     public String voiceToText(String fileName) {
