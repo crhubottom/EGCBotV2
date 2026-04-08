@@ -226,7 +226,7 @@
         </dependency>
         <dependency>
             <groupId>moe.kyokobot.libdave</groupId>
-            <artifactId>natives-linux-x86-64</artifactId>
+            <artifactId>natives-linux-musl-x86-64</artifactId>
             <version>ce725965e</version>
         </dependency>
 
