@@ -224,6 +224,11 @@
             <artifactId>adapter-jda</artifactId>
             <version>ce725965e</version>
         </dependency>
+        <dependency>
+            <groupId>moe.kyokobot.libdave</groupId>
+            <artifactId>natives-linux-x86-64</artifactId>
+            <version>ce725965e</version>
+        </dependency>
 
         <dependency>
             <groupId>moe.kyokobot.libdave</groupId>
