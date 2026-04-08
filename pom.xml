@@ -100,6 +100,10 @@
             <url>https://maven.lavalink.dev/releases</url>
         </repository>
         <repository>
+            <id>lavalink-snapshots</id>
+            <url>https://maven.lavalink.dev/snapshots</url>
+        </repository>
+        <repository>
             <id>snapshots-repo</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
             <releases>
@@ -214,11 +218,20 @@
             <artifactId>commons-text</artifactId>
             <version>1.12.0</version>
         </dependency>
+
         <dependency>
-            <groupId>club.minnced</groupId>
-            <artifactId>jdave-api</artifactId>
-            <version>0.1.8</version>
+            <groupId>moe.kyokobot.libdave</groupId>
+            <artifactId>adapter-jda</artifactId>
+            <version>ce725965e</version>
         </dependency>
+
+        <dependency>
+            <groupId>moe.kyokobot.libdave</groupId>
+            <artifactId>impl-jni</artifactId>
+            <version>ce725965e</version>
+        </dependency>
+
+
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>

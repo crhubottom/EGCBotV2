@@ -1,6 +1,5 @@
 package com.egc.bot;
 
-import club.minnced.discord.jdave.interop.JDaveSessionFactory;
 import com.egc.bot.audio.AudioReceiveHandler;
 import com.egc.bot.audio.commandListener;
 import com.egc.bot.commands.*;
@@ -10,9 +9,13 @@ import com.egc.bot.events.*;
 import com.egc.keys.keyGrabber;
 import io.grpc.LoadBalancerRegistry;
 import io.grpc.internal.PickFirstLoadBalancerProvider;
+import moe.kyokobot.libdave.DaveFactory;
+import moe.kyokobot.libdave.NativeDaveFactory;
+import moe.kyokobot.libdave.jda.LDJDADaveSessionFactory;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.audio.AudioModuleConfig;
+import net.dv8tion.jda.api.audio.dave.DaveSessionFactory;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
@@ -69,8 +72,11 @@ public class Bot{
     public static AudioReceiveHandler receiverHandler;
     public Bot() throws InterruptedException {
         String token = keys.get("DISCORD_KEY");
+        DaveFactory daveFactory = new NativeDaveFactory(); // Using native libdave via jni-impl
+
+        DaveSessionFactory daveSessionFactory = new LDJDADaveSessionFactory(daveFactory);
         client = JDABuilder.createDefault(token).enableIntents(GatewayIntent.MESSAGE_CONTENT).enableCache(CacheFlag.ACTIVITY).enableIntents(GatewayIntent.GUILD_PRESENCES).enableIntents(GatewayIntent.GUILD_MEMBERS).setMemberCachePolicy(MemberCachePolicy.ALL)
-                .setAudioModuleConfig(new AudioModuleConfig().withDaveSessionFactory(new JDaveSessionFactory())).build();
+                .setAudioModuleConfig(new AudioModuleConfig().withDaveSessionFactory(daveSessionFactory)).build();
         LoadBalancerRegistry.getDefaultRegistry().register(new PickFirstLoadBalancerProvider());
         new Database();
         client.addEventListener(new ReadyListener());
