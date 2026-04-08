@@ -193,7 +193,10 @@ public class Bot {
 
         HttpClient HTTPclient = HttpClient.newHttpClient();
         ObjectMapper mapper = new ObjectMapper();
-
+        mapper.configure(
+                com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+                false
+        );
         String voicesUrl = "https://api.elevenlabs.io/v1/voices";
 
         HttpRequest voicesRequest = HttpRequest.newBuilder()
