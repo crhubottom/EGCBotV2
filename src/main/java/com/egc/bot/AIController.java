@@ -8,12 +8,6 @@ import io.github.sashirestela.openai.domain.audio.TranscriptionRequest;
 import io.github.sashirestela.openai.domain.chat.Chat;
 import io.github.sashirestela.openai.domain.chat.ChatRequest;
 import io.github.stefanbratanov.jvm.openai.*;
-import net.andrewcpu.elevenlabs.builders.SpeechGenerationBuilder;
-import net.andrewcpu.elevenlabs.enums.ElevenLabsVoiceModel;
-import net.andrewcpu.elevenlabs.enums.GeneratedAudioOutputFormat;
-import net.andrewcpu.elevenlabs.enums.StreamLatencyOptimization;
-import net.andrewcpu.elevenlabs.model.voice.Voice;
-import net.andrewcpu.elevenlabs.model.voice.VoiceSettings;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -252,15 +246,15 @@ try {
          */
         String apiKey = System.getenv("ELEVENLABS_API_KEY");
         String voiceId = "JBFqnCBsd6RMkjVDRZzb"; // example voice from docs
-        String url = "https://api.elevenlabs.io/v3/text-to-speech/" + voiceId
+        String url = "https://api.elevenlabs.io/v1/text-to-speech/" + voiceId
                 + "?output_format=mp3_44100_128";
 
         String json = """
             {
-              "text": "Hello from Java using the ElevenLabs API.",
-              "model_id": "eleven_multilingual_v2"
+              "text": "%s",
+              "model_id": "eleven_v3"
             }
-            """;
+            """.formatted(prompt);
 
         HttpClient client = HttpClient.newHttpClient();
 
@@ -277,13 +271,14 @@ try {
         );
 
         if (response.statusCode() == 200) {
-            Files.write(Path.of("speech.mp3"), response.body());
-            System.out.println("Saved speech.mp3");
+            Files.write(Path.of(fileName+".mp3"), response.body());
+            System.out.println("Saved "+fileName+".mp3");
+            return true;
         } else {
             System.out.println("Request failed: " + response.statusCode());
             System.out.println(new String(response.body()));
+            return false;
         }
-        return true;
     }
 
     public String voiceToText(String fileName) {
