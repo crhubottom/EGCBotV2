@@ -156,7 +156,6 @@ try {
         Random random = new Random();
         int voiceNum=random.nextInt(voiceArray.length);
         String voiceId = voiceArray[voiceNum].voice_id;
-        voiceId="36N80vO9iEZ8uamz8eUf";
         String voiceName = voiceArray[voiceNum].name;
         String url = "https://api.elevenlabs.io/v1/text-to-speech/" + voiceId
                 + "?output_format=mp3_44100_128";
