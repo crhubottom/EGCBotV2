@@ -1,5 +1,7 @@
 package com.egc.bot;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sashirestela.openai.SimpleOpenAI;
 import io.github.sashirestela.openai.common.content.ContentPart;
 import io.github.sashirestela.openai.domain.audio.AudioResponseFormat;
@@ -25,6 +27,7 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.egc.bot.Bot.*;
@@ -137,115 +140,23 @@ try {
 }
 
     }
+    public static class Voice {
+        public String voice_id;
+        public String name;
+    }
 
+    public static class VoicesResponse {
+        public List<Voice> voices;
+    }
     public boolean ttsCall(String prompt, String fileName) throws IOException, InterruptedException {
-        /*
-        int ran = (int) (Math.random() * 6);
-        SpeechRequest.Voice voice = switch (ran) {
-            case 0 -> SpeechRequest.Voice.ONYX;
-            case 1 -> SpeechRequest.Voice.ALLOY;
-            case 2 -> SpeechRequest.Voice.ECHO;
-            case 3 -> SpeechRequest.Voice.NOVA;
-            case 4 -> SpeechRequest.Voice.FABLE;
-            case 5 -> SpeechRequest.Voice.SHIMMER;
-            default -> SpeechRequest.Voice.ONYX;
-        };
-        var openAI = SimpleOpenAI.builder()
-                .apiKey(keys.get("OPENAI_KEY"))
-                .build();
-        var speechRequest = SpeechRequest.builder()
-                .model("tts-1")
-                .input(prompt)
-                .voice(voice)
-                .responseFormat(SpeechRequest.SpeechResponseFormat.MP3)
-                .speed(1.0)
-                .build();
-        var futureSpeech = openAI.audios().speak(speechRequest);
-        var speechResponse = futureSpeech.join();
-        try {
-            var audioFile = new FileOutputStream(fileName + ".mp3");
-            audioFile.write(speechResponse.readAllBytes());
-            System.out.println(audioFile.getChannel().size() + " bytes");
-            audioFile.close();
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
 
 
-        String apiKey = deepKey; // Replace DEEPGRAM_API_KEY with your actual API key
-        String voice;
 
-        int ran = (int) (Math.random() * 40);
-        voice = switch (ran) {
-            case 0 -> "odysseus";
-            case 1 -> "thalia";
-            case 2 -> "amalthea";
-            case 3 -> "andromeda";
-            case 4 -> "apollo";
-            case 5 -> "arcas";
-            case 6 -> "aries";
-            case 7 -> "asteria";
-            case 8 -> "athena";
-            case 9 -> "atlas";
-            case 10 -> "aurora";
-            case 11 -> "callista";
-            case 12 -> "cora";
-            case 13 -> "cordelia";
-            case 14 -> "delia";
-            case 15 -> "draco";
-            case 16 -> "electra";
-            case 17 -> "harmonia";
-            case 18 -> "helena";
-            case 19 -> "hera";
-            case 20 -> "hermes";
-            case 21 -> "hyperion";
-            case 22 -> "iris";
-            case 23 -> "janus";
-            case 24 -> "juno";
-            case 25 -> "jupiter";
-            case 26 -> "luna";
-            case 27 -> "mars";
-            case 28 -> "minerva";
-            case 29 -> "neptune";
-            case 30 -> "ophelia";
-            case 31 -> "orion";
-            case 32 -> "orpheus";
-            case 33 -> "pandora";
-            case 34 -> "phoebe";
-            case 35 -> "pluto";
-            case 36 -> "saturn";
-            case 37 -> "selene";
-            case 38 -> "theia";
-            case 39 -> "vesta";
-            default -> "zeus";
-        };
-        String url = "https://api.deepgram.com/v1/speak?model=aura-2-" + voice + "-en";
-        String outputFile = fileName + ".mp3";
-        HttpClient httpClient = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Authorization", "Token " + apiKey)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(text))
-                .build();
 
-        HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
-
-        if (response.statusCode() == 200) {
-            byte[] audioData = response.body();
-            Path outputPath = Paths.get(outputFile);
-            Files.write(outputPath, audioData);
-            System.out.println("Audio file saved: " + outputPath);
-            return true;
-        } else {
-            System.err.println("Error: " + response.statusCode() + " - " + response.body());
-            return false;
-        }
-
-         */
-        String apiKey = System.getenv("ELEVENLABS_API_KEY");
-        String voiceId = "JBFqnCBsd6RMkjVDRZzb"; // example voice from docs
+        Random random = new Random();
+        int voiceNum=random.nextInt(voiceArray.length);
+        String voiceId = voiceArray[voiceNum].voice_id;
+        String voiceName = voiceArray[voiceNum].name;
         String url = "https://api.elevenlabs.io/v1/text-to-speech/" + voiceId
                 + "?output_format=mp3_44100_128";
 
@@ -255,12 +166,10 @@ try {
               "model_id": "eleven_v3"
             }
             """.formatted(prompt);
-
         HttpClient client = HttpClient.newHttpClient();
-
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("xi-api-key", apiKey)
+                .header("xi-api-key", ElevenLabsapiKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();

@@ -7,6 +7,7 @@ import com.egc.bot.commands.Queue;
 import com.egc.bot.database.*;
 import com.egc.bot.events.*;
 import com.egc.keys.keyGrabber;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.LoadBalancerRegistry;
 import io.grpc.internal.PickFirstLoadBalancerProvider;
 import moe.kyokobot.libdave.DaveFactory;
@@ -28,6 +29,10 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -38,7 +43,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Bot{
+public class Bot {
     public static JDA client;
     public static keyGrabber keys = new keyGrabber();
     public static long traderID;
@@ -50,27 +55,30 @@ public class Bot{
     public static int traderCount;
     public static boolean autoTTS = false;
     public static int receiverCount;
-    public static long guildID= Long.parseLong(keys.get("GUILD"));
-    public static String deepKey=keys.get("deep_key");
-    public static String textModel="gpt-5.4";
+    public static long guildID = Long.parseLong(keys.get("GUILD"));
+    public static String deepKey = keys.get("deep_key");
+    public static String textModel = "gpt-5.4";
     public static List<byte[]> recievedBytes = new ArrayList<>();
     //public static AudioReceiveHandler re = new AudioReceiveHandler();
     public static AudioManager man;
     public static invDB inv = new invDB();
-    public static storeDB store= new storeDB();
+    public static storeDB store = new storeDB();
     public static boolean randReply = true;
     public static boolean frankieReply = true;
     public static boolean firstRun = true;
+    public static String ElevenLabsapiKey;
     public static rocketEvent rocket = new rocketEvent();
-    public static volatile boolean record=false;
+    public static volatile boolean record = false;
+    public static  AIController.Voice[] voiceArray;
     public static rocketDB rocketDB;
     public static blackjackController bj = new blackjackController();
     public static AIController AIc = new AIController();
 
-     // Change this to your preferred keyword
-    public static int rocketRefreshCount=0;
+    // Change this to your preferred keyword
+    public static int rocketRefreshCount = 0;
     public static AudioReceiveHandler receiverHandler;
-    public Bot() throws InterruptedException {
+
+    public Bot() throws InterruptedException, IOException {
         String token = keys.get("DISCORD_KEY");
         DaveFactory daveFactory = new NativeDaveFactory(); // Using native libdave via jni-impl
 
@@ -177,6 +185,55 @@ public class Bot{
                         .addOption(OptionType.STRING, "status", "the content")
         ).queue();
         client.awaitReady();
+
+        ElevenLabsapiKey = System.getenv("ELEVENLABS_API_KEY");
+        if (ElevenLabsapiKey == null || ElevenLabsapiKey.isBlank()) {
+            System.out.println("Missing ELEVENLABS_API_KEY environment variable.");
+        }
+
+        HttpClient HTTPclient = HttpClient.newHttpClient();
+        ObjectMapper mapper = new ObjectMapper();
+
+        String voicesUrl = "https://api.elevenlabs.io/v1/voices";
+
+        HttpRequest voicesRequest = HttpRequest.newBuilder()
+                .uri(URI.create(voicesUrl))
+                .header("xi-api-key", ElevenLabsapiKey)
+                .GET()
+                .build();
+
+        HttpResponse<String> voicesResponse = HTTPclient.send(
+                voicesRequest,
+                HttpResponse.BodyHandlers.ofString()
+        );
+
+
+
+        if (voicesResponse.statusCode() == 200) {
+            AIController.VoicesResponse data = mapper.readValue(
+                    voicesResponse.body(),
+                    AIController.VoicesResponse.class
+            );
+
+            for (AIController.Voice v : data.voices) {
+                System.out.println(v.name + " -> " + v.voice_id);
+            }
+
+            voiceArray = data.voices.toArray(new AIController.Voice[0]);
+        } else {
+            System.out.println("Voice request failed: " + voicesResponse.statusCode());
+            System.out.println(voicesResponse.body());
+        }
+
+
+
+
+
+
+
+
+
+
         connectToVoiceChannel();
         settingsDB.initialize();
         client.getPresence().setActivity(Activity.watching("The World Burn"));
