@@ -219,31 +219,6 @@
             <artifactId>jdave-api</artifactId>
             <version>0.1.8</version>
         </dependency>
-
-        <!-- Native libraries -->
-        <dependency>
-            <groupId>club.minnced</groupId>
-            <artifactId>jdave-native-linux-x86-64</artifactId>
-            <version>0.1.8</version>
-        </dependency>
-
-        <dependency>
-            <groupId>club.minnced</groupId>
-            <artifactId>jdave-native-linux-aarch64</artifactId>
-            <version>0.1.8</version>
-        </dependency>
-
-        <dependency>
-            <groupId>club.minnced</groupId>
-            <artifactId>jdave-native-win-x86-64</artifactId>
-            <version>0.1.8</version>
-        </dependency>
-
-        <dependency>
-            <groupId>club.minnced</groupId>
-            <artifactId>jdave-native-darwin</artifactId>
-            <version>0.1.8</version>
-        </dependency>
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
