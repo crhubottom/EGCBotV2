@@ -19,7 +19,7 @@ public class joinVoiceEvent extends ListenerAdapter {
 
             String response = AIc.gptCallWithSystem(
                     "Give a very short, one-line greeting to the user " + event.getMember().getEffectiveName() + " who just joined the voice channel.",
-                    "Be witty, sarcastic, and playful. You must use mild swearing and light roast-style humor, and may insult the user. No emojis. Less than 20 words",
+                    "Use swear words to welcome the user to the voice channel. No emojis. Less than 20 words",
                     textModel
             );            try {
                 AIc.ttsCall(response, "welcome");
