@@ -21,6 +21,8 @@ public class joinVoiceEvent extends ListenerAdapter {
             if(event.getMember().getId().equals(keys.get("BOT_ID"))){
                 try {
                     AIc.ttsCall("Whats up fuckers!", "welcome");
+                    PlayerManager playerManager = PlayerManager.get();
+                    playerManager.play(client.getGuildById(guildID), "welcome.mp3");
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 } catch (InterruptedException e) {
