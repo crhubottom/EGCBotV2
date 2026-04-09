@@ -92,6 +92,7 @@ public class Bot {
         client.addEventListener(new SlashCommandListener());
         System.out.println(deepKey);
         client.addEventListener(new respond());
+        client.addEventListener(new joinVoiceEvent());
         client.addEventListener(new buttonManager());
         executorService = Executors.newFixedThreadPool(10); // More threads for multiple users
 
