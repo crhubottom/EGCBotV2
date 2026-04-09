@@ -6,6 +6,8 @@ import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Random;
 
 import static com.egc.bot.Bot.*;
 
@@ -16,13 +18,25 @@ public class joinVoiceEvent extends ListenerAdapter {
         if (event.getChannelJoined() != null && event.getChannelLeft() == null) {
             System.out.println(event.getMember().getEffectiveName() +
                     " joined " + event.getChannelJoined().getName());
-
-            String response = AIc.gptCallWithSystem(
-                    "Give a very short, one-line greeting to the user " + event.getMember().getEffectiveName() + " who just joined the voice channel.",
-                    "Use swear words to welcome the user to the voice channel. No emojis. Less than 20 words",
-                    textModel
-            );            try {
-                AIc.ttsCall(response, "welcome");
+            if(event.getMember().getId().equals("1237574116328865873")){
+                try {
+                    AIc.ttsCall("Whats up fuckers!", "welcome");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                return;
+            }
+            List<String> responses = List.of(
+                    "Welcome to the fucking voice channel " + event.getMember().getEffectiveName() + ".",
+                    "Hey " + event.getMember().getEffectiveName() + ", good to fucking see you!",
+                    "Whats up " + event.getMember().getEffectiveName() + "?",
+                    event.getMember().getEffectiveName() + " finally fucking joined!",
+                    "A wild " + event.getMember().getEffectiveName() + " appears!"
+            );
+            try {
+                AIc.ttsCall( responses.get(new Random().nextInt(responses.size())), "welcome");
                 PlayerManager playerManager = PlayerManager.get();
                 playerManager.play(client.getGuildById(guildID), "welcome.mp3");
             } catch (IOException e) {
