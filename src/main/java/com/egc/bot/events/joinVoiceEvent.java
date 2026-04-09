@@ -18,7 +18,7 @@ public class joinVoiceEvent extends ListenerAdapter {
         if (event.getChannelJoined() != null && event.getChannelLeft() == null) {
             System.out.println(event.getMember().getEffectiveName() +
                     " joined " + event.getChannelJoined().getName());
-            if(!event.getMember().getId().equals(keys.get("BOT_ID"))){
+            if(event.getMember().getId().equals(keys.get("BOT_ID"))){
                 try {
                     AIc.ttsCall("Whats up fuckers!", "welcome");
                 } catch (IOException e) {
