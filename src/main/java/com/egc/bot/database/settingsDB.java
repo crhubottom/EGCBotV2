@@ -1,7 +1,5 @@
 package com.egc.bot.database;
 
-import org.checkerframework.checker.units.qual.A;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;

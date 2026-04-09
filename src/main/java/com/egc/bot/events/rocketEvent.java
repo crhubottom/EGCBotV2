@@ -1,7 +1,6 @@
 package com.egc.bot.events;
 
 import com.egc.bot.database.Database;
-import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.api.utils.TimeFormat;
 
 import java.io.File;

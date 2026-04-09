@@ -1,7 +1,6 @@
 package com.egc.bot.commands;
 
 import com.egc.bot.commands.interfaces.ICommand;
-import com.egc.bot.events.blackjackController;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
@@ -10,9 +9,6 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 
 import java.awt.*;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 
 import static com.egc.bot.Bot.*;
 

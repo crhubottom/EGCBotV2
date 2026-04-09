@@ -6,8 +6,6 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 
 import java.util.Objects;
 
-import static com.egc.bot.Bot.*;
-
 
 public class toggle implements ICommand {
 

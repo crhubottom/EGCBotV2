@@ -1,14 +1,11 @@
 package com.egc.bot.commands;
 
 import com.egc.bot.commands.interfaces.ICommand;
-import io.github.stefanbratanov.jvm.openai.OpenAIException;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.utils.FileUpload;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;

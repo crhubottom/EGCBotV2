@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 import java.awt.*;
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Objects;

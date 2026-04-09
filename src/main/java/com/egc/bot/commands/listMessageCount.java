@@ -8,7 +8,8 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import java.awt.*;
 import java.sql.SQLException;
 
-import static com.egc.bot.Bot.*;
+import static com.egc.bot.Bot.client;
+import static com.egc.bot.Bot.guildID;
 
 public class listMessageCount implements ICommand {
     public void run(SlashCommandInteraction ctx) throws SQLException {

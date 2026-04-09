@@ -2,12 +2,12 @@ package com.egc.bot.database;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 
+import java.awt.*;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.awt.*;
 
-import static com.egc.bot.Bot.*;
+import static com.egc.bot.Bot.inv;
 
 public class storeDB {
     public EmbedBuilder getStore(){

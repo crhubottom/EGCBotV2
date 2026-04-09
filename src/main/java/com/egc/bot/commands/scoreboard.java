@@ -6,7 +6,6 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 
 import java.awt.*;
 
-import static com.egc.bot.Bot.AIc;
 import static com.egc.bot.Bot.inv;
 
 public class scoreboard implements ICommand {

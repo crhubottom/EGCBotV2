@@ -4,7 +4,6 @@ import com.egc.bot.audio.PlayerManager;
 import com.egc.bot.database.messageDB;
 import com.egc.bot.database.settingsDB;
 import com.egc.bot.events.countTracker;
-import io.github.stefanbratanov.jvm.openai.Attachment;
 import io.github.stefanbratanov.jvm.openai.OpenAIException;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;

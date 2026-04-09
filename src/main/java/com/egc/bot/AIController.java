@@ -1,12 +1,7 @@
 package com.egc.bot;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sashirestela.openai.SimpleOpenAI;
 import io.github.sashirestela.openai.common.content.ContentPart;
-import io.github.sashirestela.openai.domain.audio.AudioResponseFormat;
-import io.github.sashirestela.openai.domain.audio.SpeechRequest;
-import io.github.sashirestela.openai.domain.audio.TranscriptionRequest;
 import io.github.sashirestela.openai.domain.chat.Chat;
 import io.github.sashirestela.openai.domain.chat.ChatRequest;
 import io.github.stefanbratanov.jvm.openai.*;
@@ -18,17 +13,16 @@ import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.egc.bot.Bot.*;
 
@@ -190,52 +184,7 @@ try {
         }
     }
 
-    public String voiceToText(String fileName) {
-        // System.out.println("vts called");
-        var openAI = SimpleOpenAI.builder()
-                .apiKey(keys.get("OPENAI_KEY"))
-                .build();
-        var audioRequest = TranscriptionRequest.builder()
-                .file(Paths.get(fileName + ".wav"))
-                .model("whisper-1")
-                .responseFormat(AudioResponseFormat.VERBOSE_JSON)
-                .temperature(0.2)
-                .timestampGranularity(TranscriptionRequest.TimestampGranularity.WORD)
-                .timestampGranularity(TranscriptionRequest.TimestampGranularity.SEGMENT)
-                .build();
 
-        var futureAudio = openAI.audios().transcribe(audioRequest);
-        var audioResponse = futureAudio.join();
-        System.out.println("output:" + audioResponse.getText());
-        return audioResponse.getText();
-    }
-
-    public String voiceToTextFile(File fileName) {
-        long startTime = System.nanoTime();
-        var openAI = SimpleOpenAI.builder()
-                .apiKey(keys.get("OPENAI_KEY"))
-                .build();
-        var audioRequest = TranscriptionRequest.builder()
-                .file(fileName.toPath())
-                .model("whisper-1")
-                .responseFormat(AudioResponseFormat.VERBOSE_JSON)
-                .temperature(0.2)
-                .timestampGranularity(TranscriptionRequest.TimestampGranularity.WORD)
-                .timestampGranularity(TranscriptionRequest.TimestampGranularity.SEGMENT)
-                .build();
-
-        var futureAudio = openAI.audios().transcribe(audioRequest);
-        var audioResponse = futureAudio.join();
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime) / 1000000;
-        System.out.println("transcribing took " + duration + " ms");
-        System.out.println(audioResponse.getText());
-        return audioResponse.getText();
-    }
-
-    public void deepgramTextToSpeech(String prompt,String fileName) throws IOException, InterruptedException {
-
-    }
     public String deepgramSpeechToText(File filename) {
         try {
             // Specify the URL for the Deepgram API endpoint

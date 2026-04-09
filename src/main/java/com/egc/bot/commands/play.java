@@ -7,8 +7,6 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 
 public class play implements ICommand {

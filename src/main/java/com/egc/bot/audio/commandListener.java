@@ -38,27 +38,27 @@ public class commandListener {
         executorService.submit(() -> {
             while (true) {
                 try {
-                    // Check for completed speech segments from each user
+                    // Check all users for silence timeout completion
+                    receiverHandler.pollCompletedSpeechSegments();
+
+                    // Now collect finished segments
                     Map<Long, byte[]> completedSpeech = receiverHandler.getCompletedSpeechSegments();
 
-                    // Process each completed speech segment
                     for (Map.Entry<Long, byte[]> entry : completedSpeech.entrySet()) {
                         Long userId = entry.getKey();
                         byte[] audioData = entry.getValue();
 
-                        // Skip if already processing for this user
                         if (processingUsers.getOrDefault(userId, false)) {
                             continue;
                         }
 
-                        // Process this user's audio
                         if (audioData.length > 0) {
                             processingUsers.put(userId, true);
                             processUserAudio(userId, audioData);
                         }
                     }
 
-                    Thread.sleep(100); // Short sleep to avoid CPU hogging
+                    Thread.sleep(100);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

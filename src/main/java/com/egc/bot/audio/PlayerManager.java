@@ -9,7 +9,9 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import dev.lavalink.youtube.YoutubeAudioSourceManager;
 import dev.lavalink.youtube.YoutubeSourceOptions;
-import dev.lavalink.youtube.clients.*;
+import dev.lavalink.youtube.clients.Tv;
+import dev.lavalink.youtube.clients.TvHtml5Simply;
+import dev.lavalink.youtube.clients.WebEmbedded;
 import net.dv8tion.jda.api.entities.Guild;
 
 import java.util.HashMap;

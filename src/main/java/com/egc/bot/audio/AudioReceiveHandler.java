@@ -1,24 +1,19 @@
 package com.egc.bot.audio;
 
-import net.dv8tion.jda.api.audio.CombinedAudio;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.egc.bot.Bot.*;
 import static com.egc.bot.audio.commandListener.*;
 
 
 public class AudioReceiveHandler implements net.dv8tion.jda.api.audio.AudioReceiveHandler {
     // Map of user IDs to their voice state
-    private final Map<Long, UserVoiceState> userVoiceStates = new ConcurrentHashMap<>();
+    private static final Map<Long, UserVoiceState> userVoiceStates = new ConcurrentHashMap<>();
     // Map for completed speech segments ready for processing
-    private final Map<Long, byte[]> completedSpeechSegments = new ConcurrentHashMap<>();
+    private static final Map<Long, byte[]> completedSpeechSegments = new ConcurrentHashMap<>();
 
     @Override
     public boolean canReceiveUser() {
@@ -54,7 +49,21 @@ public class AudioReceiveHandler implements net.dv8tion.jda.api.audio.AudioRecei
         completedSpeechSegments.clear();
         return result;
     }
+    public void pollCompletedSpeechSegments() {
+        for (Map.Entry<Long, UserVoiceState> entry : userVoiceStates.entrySet()) {
+            Long userId = entry.getKey();
+            UserVoiceState voiceState = entry.getValue();
 
+            synchronized (voiceState) {
+                if (voiceState.isSpeechComplete()) {
+                    byte[] completedSpeech = voiceState.getAndClearSpeechBuffer();
+                    if (completedSpeech.length > 0) {
+                        completedSpeechSegments.put(userId, completedSpeech);
+                    }
+                }
+            }
+        }
+    }
     // Class to track speech state for a single user
     private static class UserVoiceState {
         private final ByteArrayOutputStream speechBuffer = new ByteArrayOutputStream();
@@ -85,6 +94,8 @@ public class AudioReceiveHandler implements net.dv8tion.jda.api.audio.AudioRecei
                 speechBuffer.write(audioData, 0, audioData.length);
             }
         }
+
+
 
         // Check if the current speech segment is complete
         public boolean isSpeechComplete() {

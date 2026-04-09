@@ -1,7 +1,6 @@
 package com.egc.bot.events;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.MessageEmbed;
 
 import java.awt.*;
 import java.sql.SQLException;

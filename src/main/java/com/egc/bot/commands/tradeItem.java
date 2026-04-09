@@ -4,13 +4,11 @@ import com.egc.bot.commands.interfaces.ICommand;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 
 import java.awt.*;
 
 import static com.egc.bot.Bot.*;
-import static com.egc.bot.Bot.inv;
 
 public class tradeItem implements ICommand {
 
