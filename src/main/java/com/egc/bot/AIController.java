@@ -157,7 +157,7 @@ try {
         String json = """
             {
               "text": "%s",
-              "model_id": "eleven_v3"
+              "model_id": "eleven_multilingual_v2"
             }
             """.formatted(prompt);
         HttpClient client = HttpClient.newHttpClient();
