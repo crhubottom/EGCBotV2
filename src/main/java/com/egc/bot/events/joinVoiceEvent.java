@@ -1,6 +1,5 @@
 package com.egc.bot.events;
 
-import com.egc.bot.AIController;
 import com.egc.bot.audio.PlayerManager;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;

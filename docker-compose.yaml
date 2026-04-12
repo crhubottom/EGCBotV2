@@ -7,9 +7,10 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - mysql
+    volumes:
+      - ./audioFiles:/app/audioFiles
     environment:
       - DISCORD_KEY=${DISCORD_KEY}
-      #- OPENAI_KEY=sk-proj-P5cL2q:wONtyrhK6sMigzOT3BlbkFJ30O0iiRNxuDdvJ8DxrDU
       - OPENAI_KEY=${OPENAI_KEY}
       - DB_USER=${DB_USER}
       - DB_PW=${DB_PW}
@@ -26,6 +27,7 @@ services:
       - deep_key=${deep_key}
       - Oauth=${Oauth}
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+
   mysql:
     image: mysql:8.0.39
     restart: unless-stopped
@@ -33,8 +35,7 @@ services:
       MYSQL_ROOT_PASSWORD: 4702
     volumes:
       - ./data:/var/lib/mysql
-    #ports:
-    #  3306:3306
+
   restarter:
     image: docker:cli
     restart: unless-stopped
@@ -48,4 +49,3 @@ services:
           fi
           sleep 60
         done
-      

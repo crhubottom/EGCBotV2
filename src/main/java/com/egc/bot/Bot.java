@@ -183,7 +183,15 @@ public class Bot {
                         .addOption(OptionType.STRING, "question", "place question here"),
                 Command.slash("changeactivity", "Change the bots status", new changeActivity())
                         .addOption(OptionType.STRING, "type", "watching, playing, competing, listening")
-                        .addOption(OptionType.STRING, "status", "the content")
+                        .addOption(OptionType.STRING, "status", "the content"),
+                Command.slash("addsound", "Add a playable sound", new addSound())
+                        .addOption(OptionType.ATTACHMENT, "file", "The file to upload", true)
+                        .addOption(OptionType.STRING, "name", "name of the audio clip", true),
+                Command.slash("sounds", "List the playable sounds", new sounds()),
+                Command.slash("playsound", "Play a sound", new playSound())
+                        .addOption(OptionType.STRING, "name", "name of the sound to play", true),
+                Command.slash("removesound", "Remove a sound", new removeSound())
+                        .addOption(OptionType.STRING, "name", "name of the sound to remove", true)
         ).queue();
         client.awaitReady();
 
