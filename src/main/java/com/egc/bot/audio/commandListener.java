@@ -30,7 +30,7 @@ public class commandListener {
     public static final int MIN_SPEECH_MS = 500; // Minimum length to consider as speech (ms)
     public static final int SPEECH_TIMEOUT_MS = 500; // Silence duration to consider speech complete (ms)
     public static final int MAX_SPEECH_MS = 5000; // Maximum speech length to prevent runaway recording (ms)
-    private static final String[] ACTIVATION_KEYWORD = new String[]{"egc bot","egcbot","egc but","egc bought","hey computer","hey bot", "e g c bot"};
+    private static final String[] ACTIVATION_KEYWORD = new String[]{"egc bot","egcbot","egc but","egc bought","hey computer","hey bot", "e g c bot", "e g c but", "e g c bought","gcbot","gc bot"};
     public static final Map<Long, Boolean> processingUsers = new ConcurrentHashMap<>();
 
 
@@ -212,9 +212,9 @@ public class commandListener {
         }
         if(audio) {
             try {
-                AIc.ttsCall(out, "output");
+                AIc.ttsCall(out, "outputvoice");
                 PlayerManager playerManager = PlayerManager.get();
-                playerManager.play(client.getGuildById(guildID), "output.mp3");
+                playerManager.play(client.getGuildById(guildID), "outputvoice.mp3");
 
             } catch (Exception e) {
                 System.out.println(e.getMessage());
