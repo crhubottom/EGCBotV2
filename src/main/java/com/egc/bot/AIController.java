@@ -146,11 +146,12 @@ try {
         String voiceId;
         int voiceNum;
         Random random = new Random();
-        if(Objects.equals(currentVoice, "Random")) {
+
+        if(currentVoice.size()==1&&Objects.equals(currentVoice.get(0), "Random")) {
              voiceNum = random.nextInt(voiceArray.length);
              voiceId = voiceArray[voiceNum].voice_id;
         }else{
-            voiceId=voiceMap.get(currentVoice);
+            voiceId=voiceMap.get(currentVoice.get(random.nextInt(currentVoice.size())));
         }
 
         String url = "https://api.elevenlabs.io/v1/text-to-speech/" + voiceId

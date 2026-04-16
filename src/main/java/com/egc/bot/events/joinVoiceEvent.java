@@ -24,13 +24,6 @@ public class joinVoiceEvent extends ListenerAdapter {
         List<Message> messages;
         StringBuilder output;
         List<String> possibleOutput = new ArrayList<>();
-        List<String> responses = List.of(
-                "Welcome to the fucking voice channel " + event.getMember().getEffectiveName() + ".",
-                "Hey " + event.getMember().getEffectiveName() + ", good to fucking see you!",
-                "Whats up " + event.getMember().getEffectiveName() + "?",
-                event.getMember().getEffectiveName() + " finally fucking joined!",
-                "A wild " + event.getMember().getEffectiveName() + " appears!"
-        );
         if (event.getChannelJoined() != null && event.getChannelLeft() == null) {
             System.out.println(event.getMember().getEffectiveName() +
                     " joined " + event.getChannelJoined().getName());

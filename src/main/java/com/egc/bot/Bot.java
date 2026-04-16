@@ -77,7 +77,10 @@ public class Bot {
     // Change this to your preferred keyword
     public static int rocketRefreshCount = 0;
     public static AudioReceiveHandler receiverHandler;
-    public static String currentVoice = "Random";
+    public static ArrayList<String> currentVoice = new ArrayList<>();
+   // public static String currentVoice = "Random";
+
+
     public Bot() throws InterruptedException, IOException {
         String token = keys.get("DISCORD_KEY");
         DaveFactory daveFactory = new NativeDaveFactory(); // Using native libdave via jni-impl
@@ -87,6 +90,7 @@ public class Bot {
                 .setAudioModuleConfig(new AudioModuleConfig().withDaveSessionFactory(daveSessionFactory)).build();
         LoadBalancerRegistry.getDefaultRegistry().register(new PickFirstLoadBalancerProvider());
         new Database();
+        currentVoice.add("Random");
         client.addEventListener(new ReadyListener());
         client.addEventListener(new ReadyListener());
         client.addEventListener(new SlashCommandListener());
