@@ -73,11 +73,11 @@ public class Bot {
     public static rocketDB rocketDB;
     public static blackjackController bj = new blackjackController();
     public static AIController AIc = new AIController();
-
+    public static HashMap<String, String> voiceMap = new HashMap<>();
     // Change this to your preferred keyword
     public static int rocketRefreshCount = 0;
     public static AudioReceiveHandler receiverHandler;
-
+    public static String currentVoice = "Random";
     public Bot() throws InterruptedException, IOException {
         String token = keys.get("DISCORD_KEY");
         DaveFactory daveFactory = new NativeDaveFactory(); // Using native libdave via jni-impl
@@ -154,6 +154,9 @@ public class Bot {
                         .addOption(OptionType.STRING, "message", "content"),
                 Command.slash("toggle", "Toggles options on/off", new toggle())
                         .addOption(OptionType.STRING, "option", "option to toggle"),
+                Command.slash("setvoice", "Set a voice for the bot to use", new setVoice())
+                        .addOption(OptionType.STRING, "voice number", "The number corresponding to the voice you want to set"),
+                Command.slash("voices", "List all available voices", new voices()),
                 Command.slash("image", "create an image", new dalleCall())
                         .addOption(OptionType.STRING, "prompt", "image description"),
                 Command.slash("icon", "Change the server icon", new changeIcon())
@@ -229,6 +232,7 @@ public class Bot {
 
             for (AIController.Voice v : data.voices) {
                 System.out.println(v.name + " -> " + v.voice_id);
+                voiceMap.put(v.name, v.voice_id);
             }
 
             voiceArray = data.voices.toArray(new AIController.Voice[0]);

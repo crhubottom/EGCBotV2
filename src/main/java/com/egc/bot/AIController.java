@@ -19,10 +19,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static com.egc.bot.Bot.*;
 
@@ -146,11 +143,16 @@ try {
 
 
 
-
+        String voiceId;
+        int voiceNum;
         Random random = new Random();
-        int voiceNum=random.nextInt(voiceArray.length);
-        String voiceId = voiceArray[voiceNum].voice_id;
-        String voiceName = voiceArray[voiceNum].name;
+        if(Objects.equals(currentVoice, "Random")) {
+             voiceNum = random.nextInt(voiceArray.length);
+             voiceId = voiceArray[voiceNum].voice_id;
+        }else{
+            voiceId=voiceMap.get(currentVoice);
+        }
+
         String url = "https://api.elevenlabs.io/v1/text-to-speech/" + voiceId
                 + "?output_format=mp3_44100_128";
 
