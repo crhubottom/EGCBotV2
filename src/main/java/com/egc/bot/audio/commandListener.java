@@ -30,7 +30,42 @@ public class commandListener {
     public static final int MIN_SPEECH_MS = 500; // Minimum length to consider as speech (ms)
     public static final int SPEECH_TIMEOUT_MS = 500; // Silence duration to consider speech complete (ms)
     public static final int MAX_SPEECH_MS = 5000; // Maximum speech length to prevent runaway recording (ms)
-    private static final String[] ACTIVATION_KEYWORD = new String[]{"egc bot","egcbot","egc but","egc bought","hey computer","hey bot", "e g c bot", "e g c but", "e g c bought","gcbot","gc bot","etc bot"};
+    private static final String[] ACTIVATION_KEYWORD = new String[]{
+            "egc bot","egcbot","egc but","egc bought",
+            "hey computer","hey bot",
+            "e g c bot","e g c but","e g c bought",
+            "gcbot","gc bot","etc bot",
+
+            // common phonetic shifts
+            "easy bot","easy but","easy bought",
+            "ec bot","ec but","ec bought",
+            "e c bot","e c but","e c bought",
+            "g c bot","g c but","g c bought",
+
+            // consonant confusion
+            "ejc bot","edc bot","ebc bot",
+            "dgc bot","gec bot",
+
+            // reordered / partial triggers
+            "bot egc","bot gc","bot ec",
+            "egc","gc","ec",
+
+            // “bot” misheard variants
+            "egc box","egc boxx","egc back","egc bad",
+            "gc box","gc back","gc bad",
+
+            // weird but real speech-to-text guesses
+            "egypt bot","agency bot","edge bot",
+            "eat you bot","eat see bot","each bot",
+
+            // “hey” variations
+            "hey egc","hey gc","hey ec",
+            "hey easy bot","hey gc bot","hey egc bot",
+
+            // other assistant-style wake phrases
+            "ok egc","ok gc","ok bot",
+            "yo egc","yo bot"
+    };
     public static final Map<Long, Boolean> processingUsers = new ConcurrentHashMap<>();
 
 
