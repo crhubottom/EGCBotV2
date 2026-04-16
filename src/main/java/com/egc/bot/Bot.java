@@ -155,7 +155,7 @@ public class Bot {
                 Command.slash("toggle", "Toggles options on/off", new toggle())
                         .addOption(OptionType.STRING, "option", "option to toggle"),
                 Command.slash("setvoice", "Set a voice for the bot to use", new setVoice())
-                        .addOption(OptionType.STRING, "voice number", "The number corresponding to the voice you want to set"),
+                        .addOption(OptionType.STRING, "voice", "The number corresponding to the voice you want to set"),
                 Command.slash("voices", "List all available voices", new voices()),
                 Command.slash("image", "create an image", new dalleCall())
                         .addOption(OptionType.STRING, "prompt", "image description"),
