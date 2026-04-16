@@ -25,7 +25,7 @@ public class setVoice implements ICommand {
             if (voiceNum==-1) {
                 currentVoice.clear();
                 currentVoice.add("Random");
-                ctx.getHook().sendMessage("Voice set to random" + currentVoice).queue();
+                ctx.getHook().sendMessage("Voice set to random").queue();
                 return;
             }
             if (voiceNum < 0 || voiceNum >= voiceArray.length) {
@@ -49,8 +49,8 @@ public class setVoice implements ICommand {
                 }
             }
                 currentVoice.clear();
-            for(int i=0;i<numbers.size();i++) {
-                currentVoice.add(voiceArray[i].name);
+            for (Integer number : numbers) {
+                currentVoice.add(voiceArray[number].name);
             }
             ctx.getHook().sendMessage("Voices set to " + currentVoice).queue();
         }
