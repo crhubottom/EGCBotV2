@@ -15,6 +15,7 @@ public class setVoice implements ICommand {
         int voiceNum=ctx.getOption("voice").getAsInt();
         if(voiceNum==-1){
             currentVoice="Random";
+            ctx.getHook().sendMessage("Voice set to random"+currentVoice).queue();
             return;
         }
         if(voiceNum<0||voiceNum>=voiceArray.length){
