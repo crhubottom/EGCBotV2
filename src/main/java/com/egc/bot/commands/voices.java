@@ -13,7 +13,7 @@ public class voices implements ICommand {
         ctx.deferReply().queue();
         StringBuilder out = new StringBuilder();
         for(int i=0;i<voiceArray.length;i++){
-            out.append(i).append(": ").append(voiceArray[i]).append("\n");
+            out.append(i).append(": ").append(voiceArray[i].name).append("\n");
         }
             EmbedBuilder eb = new EmbedBuilder();
             eb.setTitle("Available Voices", null);
