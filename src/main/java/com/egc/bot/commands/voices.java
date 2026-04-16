@@ -16,7 +16,7 @@ public class voices implements ICommand {
             out.append(i).append(": ").append(voiceArray[i].name).append("\n");
         }
             EmbedBuilder eb = new EmbedBuilder();
-            eb.setTitle("Available Voices", null);
+            eb.setTitle("Available Voices         -1 For Random", null);
             eb.setColor(Color.red);
             eb.setColor(new Color(0xF40C0C));
             eb.setColor(new Color(255, 0, 54));

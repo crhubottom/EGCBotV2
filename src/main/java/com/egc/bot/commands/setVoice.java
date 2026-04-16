@@ -13,6 +13,10 @@ public class setVoice implements ICommand {
     public void run(SlashCommandInteraction ctx) {
         ctx.deferReply().queue();
         int voiceNum=ctx.getOption("voice").getAsInt();
+        if(voiceNum==-1){
+            currentVoice="Random";
+            return;
+        }
         if(voiceNum<0||voiceNum>=voiceArray.length){
             ctx.getHook().sendMessage("Voice does not exist").queue();
             return;
