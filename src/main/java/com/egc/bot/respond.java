@@ -30,7 +30,6 @@ public class respond extends ListenerAdapter {
     private static String answer = null;
     private static Boolean trivia = false;
     private static String triviaChannelID = null;
-    Random rand = new Random();
     public static boolean dnd=false;
     public static FileUpload uploadedImage;
     public static StringBuilder story = new StringBuilder();

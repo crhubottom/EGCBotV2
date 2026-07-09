@@ -15,6 +15,7 @@ import java.util.Random;
 import static com.egc.bot.Bot.*;
 
 public class joinVoiceEvent extends ListenerAdapter {
+
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
         // Detect a user joining a voice channel for the first time
@@ -79,18 +80,18 @@ public class joinVoiceEvent extends ListenerAdapter {
             }
             try {
                 if(!possibleOutputPersonalized.isEmpty()){
-                    int rand = new Random().nextInt(2);
-                    System.out.println(rand);
-                    if(rand==0){
-                        for (String s:possibleOutputPersonalized){
-                            System.out.println(s);
-                        }
-                        AIc.ttsCall(possibleOutputGeneral.get(new Random().nextInt(possibleOutputGeneral.size())), "welcome");
-                    }else{
+                    int randNum = rand.nextInt(2);
+                    System.out.println(randNum);
+                    if(randNum==0){
                         for (String s:possibleOutputGeneral){
                             System.out.println(s);
                         }
-                        AIc.ttsCall(possibleOutputPersonalized.get(new Random().nextInt(possibleOutputPersonalized.size())), "welcome");
+                        AIc.ttsCall(possibleOutputGeneral.get(rand.nextInt(possibleOutputGeneral.size())), "welcome");
+                    }else{
+                        for (String s:possibleOutputPersonalized){
+                            System.out.println(s);
+                        }
+                        AIc.ttsCall(possibleOutputPersonalized.get(rand.nextInt(possibleOutputPersonalized.size())), "welcome");
                     }
                 }
                 PlayerManager playerManager = PlayerManager.get();

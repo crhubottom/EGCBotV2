@@ -78,7 +78,9 @@ public class Bot {
     public static int rocketRefreshCount = 0;
     public static AudioReceiveHandler receiverHandler;
     public static ArrayList<String> currentVoice = new ArrayList<>();
-   // public static String currentVoice = "Random";
+    public static Random rand = new Random();
+
+    // public static String currentVoice = "Random";
 
 
     public Bot() throws InterruptedException, IOException {
