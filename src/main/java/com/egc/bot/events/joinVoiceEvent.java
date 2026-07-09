@@ -37,8 +37,8 @@ public class joinVoiceEvent extends ListenerAdapter {
             for (Message m : messages) {
                 output = new StringBuilder();
                 content=m.getContentRaw();
-                String userInfo=content.substring(content.indexOf("{")+1,content.indexOf("}"));
-                if(userInfo.contains("Bot")){
+
+                if(content.contains("Bot")){
                     if(content.contains("^")) {
                         output.append(content, 0, content.indexOf("^"));
                         output.append(event.getMember().getEffectiveName());
@@ -50,7 +50,7 @@ public class joinVoiceEvent extends ListenerAdapter {
                 }else{
                     if(content.contains("^")){
                         if(content.contains("{")&&content.contains("}")){
-                            if(userInfo.contains(event.getMember().getEffectiveName())){
+                            if(content.substring(content.indexOf("{")+1,content.indexOf("}")).contains(event.getMember().getEffectiveName())){
                                 output.append(content, 0, content.indexOf("^"));
                                 output.append(event.getMember().getEffectiveName());
                                 output.append(content, content.indexOf("^")+1, content.indexOf("{"));
