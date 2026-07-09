@@ -19,19 +19,60 @@ public class joinVoiceEvent extends ListenerAdapter {
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
         // Detect a user joining a voice channel for the first time
-        TextChannel tc = null;
-        String content = null;
-        String member = null;
+        TextChannel tc;
+        String content;
         List<Message> messages;
         StringBuilder output;
         List<String> possibleOutputGeneral = new ArrayList<>();
+        List<String> possibleOutputBot = new ArrayList<>();
         List<String> possibleOutputPersonalized = new ArrayList<>();
         if (event.getChannelJoined() != null && event.getChannelLeft() == null) {
-            System.out.println(event.getMember().getEffectiveName() +
-                    " joined " + event.getChannelJoined().getName());
+            System.out.println(event.getMember().getEffectiveName() + " joined " + event.getChannelJoined().getName());
+            tc = event.getGuild().getTextChannelById("1491968908805279844");
+            Message latestMessage = tc.retrieveMessageById(tc.getLatestMessageId()).complete();
+            MessageHistory history = tc.getHistoryBefore(tc.getLatestMessageId(), 100).complete();
+            messages = new ArrayList<>();
+            messages.add(latestMessage); // add newest first
+            messages.addAll(history.getRetrievedHistory());
+            for (Message m : messages) {
+                output = new StringBuilder();
+                content=m.getContentRaw();
+                String userInfo=content.substring(content.indexOf("{")+1,content.indexOf("}"));
+                if(userInfo.contains("Bot")){
+                    if(content.contains("^")) {
+                        output.append(content, 0, content.indexOf("^"));
+                        output.append(event.getMember().getEffectiveName());
+                        output.append(content, content.indexOf("^") + 1, content.indexOf("{"));
+                        possibleOutputBot.add(output.toString());
+                    }else{
+                        possibleOutputBot.add(content.substring(0,content.indexOf("{")));
+                    }
+                }else{
+                    if(content.contains("^")){
+                        if(content.contains("{")&&content.contains("}")){
+                            if(userInfo.contains(event.getMember().getEffectiveName())){
+                                output.append(content, 0, content.indexOf("^"));
+                                output.append(event.getMember().getEffectiveName());
+                                output.append(content, content.indexOf("^")+1, content.indexOf("{"));
+                                possibleOutputPersonalized.add(output.toString());
+                            }
+
+                        }else {
+                            output.append(content, 0, content.indexOf("^"));
+                            output.append(event.getMember().getEffectiveName());
+                            output.append(content.substring(content.indexOf("^")+1));
+                            possibleOutputGeneral.add(output.toString());
+                        }
+                    }
+
+                }
+            }
             if (event.getMember().getId().equals(keys.get("BOT_ID"))) {
                 try {
-                    AIc.ttsCall("Whats up fuckers!", "welcome");
+                    for (String s:possibleOutputBot){
+                        System.out.println(s);
+                    }
+                    AIc.ttsCall(possibleOutputBot.get(rand.nextInt(possibleOutputBot.size())), "welcome");
                     PlayerManager playerManager = PlayerManager.get();
                     playerManager.play(client.getGuildById(guildID), "welcome.mp3");
                 } catch (IOException e) {
@@ -40,43 +81,6 @@ public class joinVoiceEvent extends ListenerAdapter {
                     throw new RuntimeException(e);
                 }
                 return;
-            }
-
-            tc = event.getGuild().getTextChannelById("1491968908805279844");
-            // Get latest message
-            Message latestMessage = tc.retrieveMessageById(tc.getLatestMessageId()).complete();
-            MessageHistory history = tc.getHistoryBefore(tc.getLatestMessageId(), 100).complete();
-            messages = new ArrayList<>();
-            messages.add(latestMessage); // add newest first
-            messages.addAll(history.getRetrievedHistory());
-
-            for (Message m : messages) {
-                output = new StringBuilder();
-                content=m.getContentRaw();
-                //System.out.println(m.getContentRaw());
-
-                if(content.contains("^")){
-                    if(content.contains("{")&&content.contains("}")){
-                        if(content.substring(content.indexOf("{")+1,content.indexOf("}")).contains(event.getMember().getEffectiveName())){
-                            output.append(content, 0, content.indexOf("^"));
-                            output.append(event.getMember().getEffectiveName());
-                            output.append(content, content.indexOf("^")+1, content.indexOf("{"));
-                            possibleOutputPersonalized.add(output.toString());
-                        }
-                    }else {
-                        output.append(content, 0, content.indexOf("^"));
-                        output.append(event.getMember().getEffectiveName());
-                        output.append(content.substring(content.indexOf("^")+1));
-                        possibleOutputGeneral.add(output.toString());
-                    }
-                    //System.out.println(output);
-
-
-
-                }
-
-
-
             }
             try {
                 if(!possibleOutputPersonalized.isEmpty()){
