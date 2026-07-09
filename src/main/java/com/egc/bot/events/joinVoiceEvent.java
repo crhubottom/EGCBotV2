@@ -56,7 +56,7 @@ public class joinVoiceEvent extends ListenerAdapter {
 
                 if(content.contains("^")){
                     if(content.contains("{")&&content.contains("}")){
-                        if(content.substring(content.indexOf("{")+1,content.indexOf("}")).contains(member)){
+                        if(content.substring(content.indexOf("{")+1,content.indexOf("}")).contains(event.getMember().getEffectiveName())){
                             output.append(content, 0, content.indexOf("^"));
                             output.append(event.getMember().getEffectiveName());
                             output.append(content, content.indexOf("^")+1, content.indexOf("{"));
