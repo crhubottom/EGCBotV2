@@ -94,7 +94,7 @@ public class Bot {
         client.addEventListener(new ReadyListener());
         client.addEventListener(new ReadyListener());
         client.addEventListener(new SlashCommandListener());
-        System.out.println(deepKey);
+        //System.out.println(deepKey);
         client.addEventListener(new respond());
         client.addEventListener(new joinVoiceEvent());
         client.addEventListener(new buttonManager());
@@ -235,14 +235,14 @@ public class Bot {
             );
 
             for (AIController.Voice v : data.voices) {
-                System.out.println(v.name + " -> " + v.voice_id);
+                //System.out.println(v.name + " -> " + v.voice_id);
                 voiceMap.put(v.name, v.voice_id);
             }
 
             voiceArray = data.voices.toArray(new AIController.Voice[0]);
         } else {
             System.out.println("Voice request failed: " + voicesResponse.statusCode());
-            System.out.println(voicesResponse.body());
+            //System.out.println(voicesResponse.body());
         }
 
 
@@ -303,7 +303,7 @@ public class Bot {
                             transcript;
 
                     String topic = AIc.gptCall(prompt, textModel);
-                    System.out.println(prompt);
+                    //System.out.println(prompt);
                     channel.getManager().setTopic(topic).queue(
                             success -> System.out.println(channel.getName() + " updated"),
                             error -> System.err.println("Failed to update " + channel.getName() + ": " + error.getMessage())
@@ -336,7 +336,7 @@ public class Bot {
 
                         if (!client.getGuildById(guildID).getMembers().get(i).getActivities().isEmpty()) {
                             String activity = client.getGuildById(guildID).getMembers().get(i).getActivities().toString();
-                            System.out.println(activity);
+                            //System.out.println(activity);
                             while (activity.contains("RichPresence:")) {
                                 games.add(activity.substring(activity.indexOf("RichPresence:") + 13, activity.indexOf("(")));
                                 activity=activity.substring(activity.indexOf("(applicationId")+13);
@@ -346,7 +346,7 @@ public class Bot {
                                 games.add(activity.substring(activity.indexOf("[PLAYING]:") + 10, activity.indexOf("]",activity.indexOf("[PLAYING]:") + 10)));
                                 activity=activity.substring(activity.indexOf("[PLAYING]:") + 10);
                             }
-                            System.out.println(games);
+                            //System.out.println(games);
                             for (String game : games) {
 
                                 gameDB.updateGame(game, false, Objects.requireNonNull(client.getGuildById(guildID)).getMembers().get(i).getId());

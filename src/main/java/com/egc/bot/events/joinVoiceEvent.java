@@ -68,7 +68,7 @@ public class joinVoiceEvent extends ListenerAdapter {
                         output.append(content.substring(content.indexOf("^")+1));
                         possibleOutputGeneral.add(output.toString());
                     }
-                    System.out.println(output);
+                    //System.out.println(output);
 
 
 
@@ -80,9 +80,16 @@ public class joinVoiceEvent extends ListenerAdapter {
             try {
                 if(!possibleOutputPersonalized.isEmpty()){
                     int rand = new Random().nextInt(2);
+                    System.out.println(rand);
                     if(rand==0){
+                        for (String s:possibleOutputPersonalized){
+                            System.out.println(s);
+                        }
                         AIc.ttsCall(possibleOutputGeneral.get(new Random().nextInt(possibleOutputGeneral.size())), "welcome");
                     }else{
+                        for (String s:possibleOutputGeneral){
+                            System.out.println(s);
+                        }
                         AIc.ttsCall(possibleOutputPersonalized.get(new Random().nextInt(possibleOutputPersonalized.size())), "welcome");
                     }
                 }
