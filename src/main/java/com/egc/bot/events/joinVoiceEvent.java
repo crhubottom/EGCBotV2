@@ -45,7 +45,7 @@ public class joinVoiceEvent extends ListenerAdapter {
             tc = event.getGuild().getTextChannelById("1491968908805279844");
             // Get latest message
             Message latestMessage = tc.retrieveMessageById(tc.getLatestMessageId()).complete();
-            MessageHistory history = tc.getHistoryBefore(tc.getLatestMessageId(), 100).complete();
+            MessageHistory history = tc.getHistoryBefore(tc.getLatestMessageId(), 300).complete();
             messages = new ArrayList<>();
             messages.add(latestMessage); // add newest first
             messages.addAll(history.getRetrievedHistory());
