@@ -23,7 +23,8 @@ public class joinVoiceEvent extends ListenerAdapter {
         String member = null;
         List<Message> messages;
         StringBuilder output;
-        List<String> possibleOutput = new ArrayList<>();
+        List<String> possibleOutputGeneral = new ArrayList<>();
+        List<String> possibleOutputPersonalized = new ArrayList<>();
         if (event.getChannelJoined() != null && event.getChannelLeft() == null) {
             System.out.println(event.getMember().getEffectiveName() +
                     " joined " + event.getChannelJoined().getName());
@@ -55,19 +56,17 @@ public class joinVoiceEvent extends ListenerAdapter {
 
                 if(content.contains("^")){
                     if(content.contains("{")&&content.contains("}")){
-                    member=content.substring(content.indexOf("{")+1,content.indexOf("}"));
-                    System.out.println("Member is "+member);
-                    if(member.equals(event.getMember().getEffectiveName())){
-                        output.append(content, 0, content.indexOf("^"));
-                        output.append(event.getMember().getEffectiveName());
-                        output.append(content, content.indexOf("^")+1, content.indexOf("{"));
-                        possibleOutput.add(output.toString());
-                    }
+                        if(content.substring(content.indexOf("{")+1,content.indexOf("}")).contains(member)){
+                            output.append(content, 0, content.indexOf("^"));
+                            output.append(event.getMember().getEffectiveName());
+                            output.append(content, content.indexOf("^")+1, content.indexOf("{"));
+                            possibleOutputPersonalized.add(output.toString());
+                        }
                     }else {
                         output.append(content, 0, content.indexOf("^"));
                         output.append(event.getMember().getEffectiveName());
                         output.append(content.substring(content.indexOf("^")+1));
-                        possibleOutput.add(output.toString());
+                        possibleOutputGeneral.add(output.toString());
                     }
                     System.out.println(output);
 
@@ -79,7 +78,14 @@ public class joinVoiceEvent extends ListenerAdapter {
 
             }
             try {
-                AIc.ttsCall(possibleOutput.get(new Random().nextInt(possibleOutput.size())), "welcome");
+                if(!possibleOutputPersonalized.isEmpty()){
+                    int rand = new Random().nextInt(2);
+                    if(rand==0){
+                        AIc.ttsCall(possibleOutputGeneral.get(new Random().nextInt(possibleOutputGeneral.size())), "welcome");
+                    }else{
+                        AIc.ttsCall(possibleOutputPersonalized.get(new Random().nextInt(possibleOutputPersonalized.size())), "welcome");
+                    }
+                }
                 PlayerManager playerManager = PlayerManager.get();
                 playerManager.play(client.getGuildById(guildID), "welcome.mp3");
             } catch (IOException e) {
