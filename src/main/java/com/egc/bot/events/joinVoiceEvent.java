@@ -2,7 +2,6 @@ package com.egc.bot.events;
 
 import com.egc.bot.audio.PlayerManager;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -19,7 +18,7 @@ public class joinVoiceEvent extends ListenerAdapter {
 
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
-        // Only react to a "fresh" join: joined a channel and wasn't in one before.
+        // Only react to a fresh join, not movement between voice channels.
         if (event.getChannelJoined() == null || event.getChannelLeft() != null) {
             return;
         }
@@ -28,136 +27,189 @@ public class joinVoiceEvent extends ListenerAdapter {
         final String memberId = event.getMember().getId();
         final boolean isBot = memberId.equals(keys.get("BOT_ID"));
 
-        System.out.println(memberName + " joined " + event.getChannelJoined().getName());
+        System.out.println(
+                memberName + " joined " + event.getChannelJoined().getName()
+        );
 
-        // Guard against a missing/unreachable welcome channel.
-        TextChannel tc = event.getGuild().getTextChannelById(WELCOME_CHANNEL_ID);
+        TextChannel tc = event.getGuild()
+                .getTextChannelById(WELCOME_CHANNEL_ID);
+
         if (tc == null) {
-            System.err.println("Welcome channel " + WELCOME_CHANNEL_ID + " not found.");
+            System.err.println(
+                    "Welcome channel " + WELCOME_CHANNEL_ID + " not found."
+            );
             return;
         }
 
-        // retrieveMessageById / getHistoryBefore are blocking REST calls. Run them off
-        // the JDA gateway thread so we don't stall event dispatch. (Swap the raw Thread
-        // for your own executor if you have one.)
-        new Thread(() -> handleJoin(tc, memberName, memberId, isBot),
-                "voice-welcome-" + memberId).start();
+        // Reading channel history is a blocking REST operation, so perform it
+        // outside JDA's gateway event thread.
+        Thread welcomeThread = new Thread(
+                () -> handleJoin(tc, memberName, memberId, isBot),
+                "voice-welcome-" + memberId
+        );
+
+        welcomeThread.start();
     }
 
-    private void handleJoin(TextChannel tc, String memberName, String memberId, boolean isBot) {
-        // If the channel has never had a message, there's nothing to read.
+    private void handleJoin(
+            TextChannel tc,
+            String memberName,
+            String memberId,
+            boolean isBot
+    ) {
         List<String> possibleOutputGeneral = new ArrayList<>();
         List<String> possibleOutputBot = new ArrayList<>();
         List<String> possibleOutputPersonalized = new ArrayList<>();
 
         try {
-            Message latestMessage = tc.retrieveMessageById(tc.getLatestMessageId()).complete();
-            MessageHistory history = tc.getHistoryBefore(tc.getLatestMessageId(), 100).complete();
+            /*
+             * Fetch the latest available messages directly.
+             *
+             * This avoids using getLatestMessageId() as a history anchor. That
+             * ID can occasionally become stale and cause Discord error 10008:
+             * Unknown Message.
+             *
+             * An empty channel simply returns an empty list.
+             */
+            List<Message> messages = tc.getHistory()
+                    .retrievePast(100)
+                    .complete();
 
-            List<Message> messages = new ArrayList<>();
-            messages.add(latestMessage); // newest first
-            messages.addAll(history.getRetrievedHistory());
-
-            for (Message m : messages) {
-                String content = m.getContentRaw();
+            for (Message message : messages) {
+                String content = message.getContentRaw();
 
                 if (content.contains("Bot")) {
-                    possibleOutputBot.add(buildMessage(content, memberName));
+                    possibleOutputBot.add(
+                            buildMessage(content, memberName)
+                    );
                 } else if (content.contains("^")) {
                     if (content.contains("{") && content.contains("}")) {
-                        // Personalized line: only usable if this member is named in { ... }.
+                        // Personalized line: only use it when this member is
+                        // named inside the metadata braces.
                         if (nameInBraces(content, memberName)) {
-                            possibleOutputPersonalized.add(buildMessage(content, memberName));
+                            possibleOutputPersonalized.add(
+                                    buildMessage(content, memberName)
+                            );
                         }
                     } else {
                         // General line: applies to everyone.
-                        possibleOutputGeneral.add(buildMessage(content, memberName));
+                        possibleOutputGeneral.add(
+                                buildMessage(content, memberName)
+                        );
                     }
                 }
-                // Messages with no "^" and not a Bot line are ignored.
+
+                // Messages without "^" that are not Bot lines are ignored.
             }
         } catch (RuntimeException e) {
-            System.err.println("Failed to read welcome messages: " + e.getMessage());
+            System.err.println(
+                    "Failed to read welcome messages from channel "
+                            + tc.getId() + ": " + e.getMessage()
+            );
+            e.printStackTrace();
             return;
         }
 
-        // Decide which line to speak.
         String chosen;
+
         if (isBot) {
             chosen = pick(possibleOutputBot);
-        } else if (!possibleOutputPersonalized.isEmpty() && !possibleOutputGeneral.isEmpty()) {
-            // Both available: coin flip between them.
-            chosen = (rand.nextInt(2) == 0)
+        } else if (!possibleOutputPersonalized.isEmpty()
+                && !possibleOutputGeneral.isEmpty()) {
+            // Both types are available, so choose between the two categories.
+            chosen = rand.nextInt(2) == 0
                     ? pick(possibleOutputGeneral)
                     : pick(possibleOutputPersonalized);
         } else if (!possibleOutputPersonalized.isEmpty()) {
             chosen = pick(possibleOutputPersonalized);
         } else {
-            chosen = pick(possibleOutputGeneral); // null if this is empty too
+            chosen = pick(possibleOutputGeneral);
         }
 
-        // No matching line -> stay silent instead of playing a stale welcome.mp3.
         if (chosen == null) {
-            System.out.println("No welcome line available for " + memberName);
+            System.out.println(
+                    "No welcome line available for " + memberName
+            );
             return;
         }
 
         System.out.println("Speaking: " + chosen);
 
         try {
-            // Unique file per member so simultaneous joins don't clobber each other's audio.
+            // A unique filename prevents simultaneous joins from overwriting
+            // each other's generated audio.
             String fileBase = "welcome_" + memberId;
+
             AIc.ttsCall(chosen, fileBase);
-            PlayerManager.get().play(client.getGuildById(guildID), fileBase + ".mp3");
+            PlayerManager.get().play(
+                    client.getGuildById(guildID),
+                    fileBase + ".mp3"
+            );
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println(
+                    "Failed to generate welcome audio for "
+                            + memberName + ": " + e.getMessage()
+            );
+            e.printStackTrace();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            System.err.println(
+                    "Welcome audio generation interrupted for " + memberName
+            );
         }
     }
+
     /**
      * Builds an output line from a template.
-     * '^' (when it appears before '{') is replaced with the member's name.
-     * Everything from '{' onward is metadata and is dropped.
-     * Safe against a missing '^' or '{'.
+     *
+     * '^', when it appears before '{', is replaced with the member's name.
+     * Everything beginning with '{' is treated as metadata and removed.
      */
     private static String buildMessage(String content, String name) {
         int brace = content.indexOf('{');
-        int end = (brace == -1) ? content.length() : brace;
+        int end = brace == -1 ? content.length() : brace;
         int caret = content.indexOf('^');
 
         if (caret != -1 && caret < end) {
-            return content.substring(0, caret) + name + content.substring(caret + 1, end);
+            return content.substring(0, caret)
+                    + name
+                    + content.substring(caret + 1, end);
         }
+
         return content.substring(0, end);
     }
 
     /**
-     * Returns true if {@code name} exactly matches one of the comma-separated
-     * entries inside the {@code { ... }} block. Uses equals (not contains) so
-     * "Al" no longer matches "{Alice}".
+     * Determines whether the member's name exactly matches a comma-separated
+     * entry inside the first { ... } block.
      */
     private static boolean nameInBraces(String content, String name) {
         int open = content.indexOf('{');
-        int close = content.indexOf('}');
-        if (open == -1 || close == -1 || close < open) {
+        int close = content.indexOf('}', open + 1);
+
+        if (open == -1 || close == -1) {
             return false;
         }
-        String list = content.substring(open + 1, close);
-        for (String token : list.split(",")) {
+
+        String names = content.substring(open + 1, close);
+
+        for (String token : names.split(",")) {
             if (token.trim().equals(name)) {
                 return true;
             }
         }
+
         return false;
     }
 
-    /** Random element, or null if the list is empty (avoids nextInt(0) crashing). */
+    /**
+     * Returns a random item, or null when the list is empty.
+     */
     private static <T> T pick(List<T> list) {
         if (list.isEmpty()) {
             return null;
         }
+
         return list.get(rand.nextInt(list.size()));
     }
 }
