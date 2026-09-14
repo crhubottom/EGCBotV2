@@ -103,9 +103,6 @@
                 <enabled>true</enabled>
                 <updatePolicy>always</updatePolicy>
             </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
         </repository>
         <repository>
             <id>snapshots-repo</id>
