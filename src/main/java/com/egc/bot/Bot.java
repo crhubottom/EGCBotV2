@@ -22,6 +22,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -100,7 +101,9 @@ public class Bot {
         client.addEventListener(new respond());
         client.addEventListener(new joinVoiceEvent());
         client.addEventListener(new buttonManager());
-        executorService = Executors.newFixedThreadPool(10); // More threads for multiple users
+        executorService = Executors.newFixedThreadPool(10);
+        Runtime.getRuntime().addShutdownHook(
+                new Thread(AudioReceiveHandler::shutdown, "vosk-shutdown"));
 
         client.updateCommands().addCommands(
                 Command.slash("stop", "Stops the bot", new Stop()),
@@ -423,6 +426,7 @@ public class Bot {
 
 
     }
+
     private void connectToVoiceChannel() {
         Guild guild = client.getGuildById(keys.get("GUILD"));
         if (guild == null) {

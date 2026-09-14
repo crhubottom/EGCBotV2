@@ -3,6 +3,7 @@ package com.egc.bot.audio;
 import com.egc.bot.database.gameDB;
 import com.egc.bot.events.rocketEvent;
 import com.egc.bot.events.tipEvent;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import org.apache.commons.io.IOUtils;
@@ -22,86 +23,26 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 import static com.egc.bot.Bot.*;
 
 public class commandListener {
+
+    /** Energy threshold used by the VAD in AudioReceiveHandler. */
     public static final int SILENCE_THRESHOLD = 200;
-    public static final int MIN_SPEECH_MS = 500;
-    public static final int SPEECH_TIMEOUT_MS = 500;
+
+    /** Hard cap on how long a single command may run before it is cut off. */
     public static final int MAX_SPEECH_MS = 5000;
 
-    // Removed very short / overly broad triggers like "egc", "gc", "ec"
-    private static final String[] ACTIVATION_KEYWORD = new String[]{
-            "hey egc bot",
-            "egc bot",
-            "egcbot",
-            "e g c bot",
-            "hey computer",
-            "hey bot",
-            "gcbot",
-            "gc bot",
-            "etc bot",
-
-            // common phonetic shifts
-            "easy bot",
-            "easy but",
-            "easy bought",
-            "ec bot",
-            "ec but",
-            "ec bought",
-            "e c bot",
-            "e c but",
-            "e c bought",
-            "g c bot",
-            "g c but",
-            "g c bought",
-
-            // consonant confusion
-            "ejc bot",
-            "edc bot",
-            "ebc bot",
-            "dgc bot",
-            "gec bot",
-
-            // reordered / partial triggers
-            "bot egc",
-            "bot gc",
-            "bot ec",
-
-            // “bot” misheard variants
-            "egc box",
-            "egc boxx",
-            "egc back",
-            "egc bad",
-            "gc box",
-            "gc back",
-            "gc bad",
-
-            // weird but real speech-to-text guesses
-            "egypt bot",
-            "agency bot",
-            "edge bot",
-            "eat you bot",
-            "eat see bot",
-            "each bot",
-
-            // “hey” variations
-            "hey egc",
-            "hey gc",
-            "hey ec",
-            "hey easy bot",
-            "hey gc bot",
-
-            // other assistant-style wake phrases
-            "ok egc",
-            "ok gc",
-            "ok bot",
-            "yo egc",
-            "yo bot"
-    };
+    /**
+     * Deepgram tends to emit these on near-silent or noise-only audio. The wake word
+     * is now matched offline, so anything reaching here should be a real command, but
+     * a short burst of background noise can still slip through.
+     */
+    private static final Set<String> FILLER_TRANSCRIPTS =
+            Set.of("bye.", "bye", "thank you.", "thank you", "thanks.", "thanks", "you", "uh", ".");
 
     public static final Map<Long, Boolean> processingUsers = new ConcurrentHashMap<>();
 
@@ -134,80 +75,58 @@ public class commandListener {
         });
     }
 
+    /**
+     * The wake phrase has already been matched offline by AudioReceiveHandler, so the
+     * audio handed in here is the command itself. Transcribe it and act on it.
+     */
     private void processUserAudio(Long userId, byte[] audioData) {
         executorService.submit(() -> {
+            File wavFile = null;
             try {
-                User user = client.getUserById(userId);
-                Member member = client.getGuildById(guildID) != null
-                        ? client.getGuildById(guildID).getMemberById(userId)
-                        : null;
+                String username = resolveUsername(userId);
+                wavFile = convertToWav(audioData);
 
-                String username;
-                if (member != null && member.getNickname() != null && !member.getNickname().isBlank()) {
-                    username = member.getNickname();
-                } else if (user != null) {
-                    username = user.getName();
-                } else {
-                    username = "Unknown User";
-                }
-
-                File wavFile = convertToWav(audioData);
                 String transcription = transcribeAudio(wavFile);
-
-                if (transcription != null) {
-                    String lower = transcription.toLowerCase().trim();
-
-                    if (!lower.equals("bye.")
-                            && !lower.equals("thank you.")
-                            && !lower.equals("thanks.")
-                            && !lower.isBlank()) {
-
-                        String matchedKeyword = findBestActivationKeyword(lower);
-
-                        if (matchedKeyword != null) {
-                            String command = lower.substring(
-                                    lower.indexOf(matchedKeyword) + matchedKeyword.length()
-                            ).trim();
-
-                            if (!command.isEmpty()) {
-                                PlayerManager.get().play(
-                                        client.getGuildById(guildID),
-                                        "ytsearch:Apple Pay Success Sound Effect"
-                                );
-
-                                processCommand(userId, username, command);
-                            }
-                        }
-                    }
+                if (transcription == null) {
+                    return;
                 }
 
-                wavFile.delete();
+                String command = transcription.trim();
+                if (command.isBlank() || FILLER_TRANSCRIPTS.contains(command.toLowerCase())) {
+                    System.out.println("Ignoring empty or filler transcription: '" + command + "'");
+                    return;
+                }
+
+                processCommand(userId, username, command);
 
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
+                if (wavFile != null && !wavFile.delete()) {
+                    wavFile.deleteOnExit();
+                }
                 processingUsers.put(userId, false);
             }
         });
     }
 
-    private String findBestActivationKeyword(String text) {
-        String bestMatch = null;
-
-        for (String keyword : ACTIVATION_KEYWORD) {
-            if (containsWakeWord(text, keyword)) {
-                if (bestMatch == null || keyword.length() > bestMatch.length()) {
-                    bestMatch = keyword;
-                }
+    /** Server nickname if there is one, otherwise the account name. */
+    private String resolveUsername(Long userId) {
+        try {
+            Guild guild = client.getGuildById(guildID);
+            Member member = guild != null ? guild.getMemberById(userId) : null;
+            if (member != null) {
+                return member.getEffectiveName();
             }
+
+            User user = client.getUserById(userId);
+            if (user != null) {
+                return user.getName();
+            }
+        } catch (Exception e) {
+            // fall through
         }
-
-        return bestMatch;
-    }
-
-    private boolean containsWakeWord(String text, String wakeWord) {
-        String pattern = "\\b" + Pattern.quote(wakeWord) + "\\b";
-        return Pattern.compile(pattern).matcher(text).find();
+        return "Unknown User";
     }
 
     private File convertToWav(byte[] pcmData) throws Exception {
@@ -220,14 +139,11 @@ public class commandListener {
                 new ByteArrayInputStream(pcmData),
                 format,
                 pcmData.length / format.getFrameSize()
-        );
-             FileOutputStream fos = new FileOutputStream(outputFile)) {
-
+        )) {
             AudioSystem.write(pcmStream, AudioFileFormat.Type.WAVE, outputFile);
         }
 
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime) / 1_000_000;
+        long duration = (System.nanoTime() - startTime) / 1_000_000;
         System.out.println("converting took " + duration + " ms");
 
         return outputFile;
@@ -247,7 +163,7 @@ public class commandListener {
 
         String out = AIc.gptCallWithSystem(
                 command,
-                "You are transcribing voice audio. Your name is E-G-C Bot, a friendly discord bot. This was said by the user "
+                "You are transcribing voice audio. Your name is E-G-C Bot, a friendly discord bot. \"The transcription may begin with a fragment of the wake phrase; ignore it. \"This was said by the user "
                         + username + ". "
                         + "Say \"play \"+song_name if the user is requesting a song to be played. "
                         + "Say \"skip\" if the user is requesting to skip the song. "
@@ -264,10 +180,16 @@ public class commandListener {
                 textModel
         );
 
+        if (out == null || out.isBlank()) {
+            System.out.println("No response from model");
+            return;
+        }
+
+        out = out.trim();
         System.out.println(out);
 
         if (out.startsWith("play ")) {
-            String name = out.substring(5);
+            String name = out.substring(5).trim();
             out = "Playing " + name;
 
             try {
@@ -280,7 +202,7 @@ public class commandListener {
             audio = false;
 
         } else if (out.startsWith("rocket_LSP ")) {
-            String lsp = out.substring(11);
+            String lsp = out.substring(11).trim();
             System.out.println(lsp);
             out = rocketEvent.nextLaunchWithLSP(lsp).toString();
         }
@@ -350,8 +272,7 @@ public class commandListener {
             }
         }
 
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime) / 1_000_000;
+        long duration = (System.nanoTime() - startTime) / 1_000_000;
         System.out.println("processing command took " + duration + "ms");
     }
 }

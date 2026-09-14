@@ -1,5 +1,6 @@
 package com.egc.bot.events;
 
+import com.egc.bot.audio.AudioReceiveHandler;
 import com.egc.bot.audio.PlayerManager;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -18,6 +19,10 @@ public class joinVoiceEvent extends ListenerAdapter {
 
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
+        if (event.getChannelLeft() != null) {
+            AudioReceiveHandler.removeUser(event.getMember().getIdLong());
+        }
+
         // Only react to a fresh join, not movement between voice channels.
         if (event.getChannelJoined() == null || event.getChannelLeft() != null) {
             return;
@@ -212,4 +217,5 @@ public class joinVoiceEvent extends ListenerAdapter {
 
         return list.get(rand.nextInt(list.size()));
     }
+
 }

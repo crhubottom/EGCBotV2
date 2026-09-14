@@ -1,5 +1,6 @@
 package com.egc.bot.commands;
 
+import com.egc.bot.audio.AudioReceiveHandler;
 import com.egc.bot.audio.GuildMusicManager;
 import com.egc.bot.audio.PlayerManager;
 import com.egc.bot.audio.TrackScheduler;
@@ -39,7 +40,9 @@ public class Stop implements ICommand {
         trackScheduler.getPlayer().stopTrack();
         ctx.reply("Stopped").queue();
         trackScheduler.getPlayer().destroy();
+        AudioReceiveHandler.clearUsers();
         audioManager.closeAudioConnection();
 
     }
+
 }
