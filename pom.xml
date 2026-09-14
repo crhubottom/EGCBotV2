@@ -153,11 +153,6 @@
             <version>1.7.0</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.12.3</version>
-        </dependency>
-        <dependency>
             <groupId>dev.lavalink.youtube</groupId>
             <artifactId>v2</artifactId>
             <version>1.18.2</version>
@@ -209,15 +204,16 @@
             <version>ce725965e</version>
         </dependency>
         <dependency>
+            <groupId>moe.kyokobot.libdave</groupId>
+            <artifactId>natives-linux-x86-64</artifactId>
+            <version>ce725965e</version>
+        </dependency>
+        <dependency>
             <groupId>com.alphacephei</groupId>
             <artifactId>vosk</artifactId>
             <version>0.3.45</version>
         </dependency>
-        <dependency>
-            <groupId>moe.kyokobot.libdave</groupId>
-            <artifactId>natives-linux-musl-x86-64</artifactId>
-            <version>ce725965e</version>
-        </dependency>
+
 
         <dependency>
             <groupId>moe.kyokobot.libdave</groupId>

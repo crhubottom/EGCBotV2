@@ -86,8 +86,11 @@ public class Bot {
 
     public Bot() throws InterruptedException, IOException {
         String token = keys.get("DISCORD_KEY");
+        DaveFactory daveFactory = new NativeDaveFactory(); // Using native libdave via jni-impl
 
-        client = JDABuilder.createDefault(token).enableIntents(GatewayIntent.MESSAGE_CONTENT).enableCache(CacheFlag.ACTIVITY).enableIntents(GatewayIntent.GUILD_PRESENCES).enableIntents(GatewayIntent.GUILD_MEMBERS).setMemberCachePolicy(MemberCachePolicy.ALL).build();
+        DaveSessionFactory daveSessionFactory = new LDJDADaveSessionFactory(daveFactory);
+        client = JDABuilder.createDefault(token).enableIntents(GatewayIntent.MESSAGE_CONTENT).enableCache(CacheFlag.ACTIVITY).enableIntents(GatewayIntent.GUILD_PRESENCES).enableIntents(GatewayIntent.GUILD_MEMBERS).setMemberCachePolicy(MemberCachePolicy.ALL)
+                .setAudioModuleConfig(new AudioModuleConfig().withDaveSessionFactory(daveSessionFactory)).build();
         LoadBalancerRegistry.getDefaultRegistry().register(new PickFirstLoadBalancerProvider());
         new Database();
         currentVoice.add("Random");
