@@ -30,7 +30,7 @@ public class PlayerManager {
         options.setAllowSearch(true);
         //dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager(true, new TvHtml5Embedded(),new Tv(), new WebEmbedded());
         YoutubeAudioSourceManager youtube = new YoutubeAudioSourceManager(options,new TvHtml5Simply(),new Tv(), new WebEmbedded());
-        youtube.useOauth2(keys.get("Oauth"),true);
+        youtube.useOauth2(null,false);
         this.audioPlayerManager.registerSourceManager(youtube);
         AudioSourceManagers.registerRemoteSources(audioPlayerManager, com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.class);
         AudioSourceManagers.registerRemoteSources(audioPlayerManager);
