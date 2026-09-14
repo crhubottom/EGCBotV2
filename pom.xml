@@ -91,11 +91,7 @@
         </plugins>
     </build>
     <repositories>
-        <repository>
-            <id>jitpack</id>
-            <url>https://jitpack.io</url>
 
-        </repository>
         <repository>
             <id>lavalink</id>
             <url>https://maven.lavalink.dev/releases</url>
@@ -103,6 +99,13 @@
         <repository>
             <id>lavalink-snapshots</id>
             <url>https://maven.lavalink.dev/snapshots</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
         </repository>
         <repository>
             <id>snapshots-repo</id>
@@ -113,6 +116,11 @@
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
+        </repository>
+        <repository>
+            <id>jitpack</id>
+            <url>https://jitpack.io</url>
+
         </repository>
     </repositories>
     <dependencyManagement>
@@ -159,7 +167,7 @@
         <dependency>
             <groupId>dev.lavalink.youtube</groupId>
             <artifactId>v2</artifactId>
-            <version>1.18.2</version>
+            <version>f45bbb7aebfcbc1c553769e04af6cd43afa8b7c3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
