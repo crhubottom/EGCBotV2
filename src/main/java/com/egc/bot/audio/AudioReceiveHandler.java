@@ -43,13 +43,13 @@ public class AudioReceiveHandler implements net.dv8tion.jda.api.audio.AudioRecei
      * "EGC" is out of vocabulary, so it is spelled as individual letters.
      */
     private static final String GRAMMAR =
-            "[\"e g c bot\", \"hey e g c bot\", \"hey e g c\", \"okay e g c\", \"[unk]\"]";
-
-    /** Partial-result substrings that count as a wake. Keep these distinctive. */
+            "[\"e g c bot\", \"hey e g c bot\", \"hey bot\", , \"[unk]\"]";
+    
     private static final String[] WAKE_PHRASES = {
             "e g c bot",
-            "hey e g c",
-            "okay e g c"
+            "hey e g c bot",
+            "hey bot"
+
     };
 
     /** Silence after the wake phrase before the command is considered finished. */

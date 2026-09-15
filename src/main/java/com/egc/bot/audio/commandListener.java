@@ -4,6 +4,7 @@ import com.egc.bot.database.gameDB;
 import com.egc.bot.events.rocketEvent;
 import com.egc.bot.events.tipEvent;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import org.apache.commons.io.IOUtils;
@@ -22,7 +23,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -175,7 +178,9 @@ public class commandListener {
                         + "Say \"top_gold\" if the user is asking who has the most gold. "
                         + "Say \"my_gold\" if the user is asking how much gold they have. "
                         + "Say \"top_game\" if the user is asking what the top played game is. "
+                        + "Say \"disconnect \"+name if the user is asking to disconnect or kick a specific person. Only respond if it is requested by the user Chase. "
                         + "If the question is cut off or does not make sense, do not respond. "
+                        + "If it seems like random input, like the wake word was accidentally said, do not respond. "
                         + "Respond to the user normally for anything else, do not just repeat what they said.",
                 textModel
         );
@@ -205,6 +210,9 @@ public class commandListener {
             String lsp = out.substring(11).trim();
             System.out.println(lsp);
             out = rocketEvent.nextLaunchWithLSP(lsp).toString();
+        } else if (out.startsWith("disconnect ")) {
+            String name = out.substring(11).trim();
+            out = disconnectMember(username, name);
         }
 
         switch (out) {
@@ -274,5 +282,35 @@ public class commandListener {
 
         long duration = (System.nanoTime() - startTime) / 1_000_000;
         System.out.println("processing command took " + duration + "ms");
+    }
+    private String disconnectMember(String requester, String targetName) {
+        if (!"Chase".equalsIgnoreCase(requester)) {
+            return "You don't have permission to do that.";
+        }
+
+        Guild guild = client.getGuildById(guildID);
+        if (guild == null) {
+            return "I couldn't find the server.";
+        }
+
+        List<Member> matches = guild.getMembersByEffectiveName(targetName, true);
+        if (matches.isEmpty()) {
+            matches = guild.getMembersByName(targetName, true);
+        }
+        if (matches.isEmpty()) {
+            return "I couldn't find anyone called " + targetName + ".";
+        }
+
+        Member target = matches.get(0);
+        GuildVoiceState state = target.getVoiceState();
+        if (state == null || !state.inAudioChannel()) {
+            return target.getEffectiveName() + " isn't in a voice channel.";
+        }
+
+        guild.kickVoiceMember(target).queue(
+                success -> System.out.println("Disconnected " + target.getEffectiveName()),
+                error -> System.out.println("Disconnect failed: " + error.getMessage()));
+
+        return "Disconnecting " + target.getEffectiveName();
     }
 }
