@@ -167,7 +167,7 @@ public class commandListener {
         String out = AIc.gptCallWithSystem(
                 command,
                 "You are transcribing voice audio. Your name is E-G-C Bot, a friendly discord bot. \"The transcription may begin with a fragment of the wake phrase; ignore it. \"This was said by the user "
-                        + username + ". "
+                        + username + ". Here are your possible outputs: \n"
                         + "Say \"play \"+song_name if the user is requesting a song to be played. "
                         + "Say \"skip\" if the user is requesting to skip the song. "
                         + "Say \"tip\" if the user is requesting a game tip. "
@@ -178,7 +178,7 @@ public class commandListener {
                         + "Say \"top_gold\" if the user is asking who has the most gold. "
                         + "Say \"my_gold\" if the user is asking how much gold they have. "
                         + "Say \"top_game\" if the user is asking what the top played game is. "
-                        + "Say \"disconnect \"+name if the user is asking to disconnect or kick a specific person. Only respond if it is requested by the user Chase. "
+                        + "Say \"disconnect \"+name if the user is asking to disconnect or kick a specific person. Only respond to the disconnect request if it is requested by the user Chase. "
                         + "If the question is cut off or does not make sense, do not respond. "
                         + "If it seems like random input, like the wake word was accidentally said, do not respond. "
                         + "Respond to the user normally for anything else, do not just repeat what they said.",
