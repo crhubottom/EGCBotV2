@@ -18,9 +18,13 @@ import org.jetbrains.annotations.NotNull;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.egc.bot.Bot.*;
 
@@ -30,10 +34,15 @@ public class respond extends ListenerAdapter {
     private static final String TTS_CHANNEL_ID = "1207940576138371115";
     private static final int MAX_MESSAGE_LENGTH = 2000;
 
+    // AI calls take seconds; running them on JDA's event thread stalls the whole bot
+    private static final ExecutorService AI_POOL = Executors.newFixedThreadPool(4);
+    // Single thread so TTS messages are generated and played in order
+    private static final ExecutorService TTS_POOL = Executors.newSingleThreadExecutor();
+
     int count = 0;
-    private static String answer = null;
-    private static Boolean trivia = false;
-    private static String triviaChannelID = null;
+    private static volatile String answer = null;
+    private static volatile boolean trivia = false;
+    private static volatile String triviaChannelID = null;
     public static boolean dnd = false;
     public static FileUpload uploadedImage;
     public static StringBuilder story = new StringBuilder();
@@ -43,8 +52,8 @@ public class respond extends ListenerAdapter {
 
     public void trivia(String answer, String channelID) {
         respond.answer = answer;
-        trivia = true;
         triviaChannelID = channelID;
+        trivia = true;
     }
 
     @Override
@@ -95,20 +104,24 @@ public class respond extends ListenerAdapter {
             }
         }
 
-        // Auto TTS
+        // Auto TTS (skip messages with no text, e.g. image-only, which ElevenLabs rejects)
         System.out.println(channelId);
-        if (channelId.equals(TTS_CHANNEL_ID) && autoTTS && event.isFromGuild()) {
-            try {
-                if (AIc.ttsCall(message, "output")) {
-                    PlayerManager playerManager = PlayerManager.get();
-                    playerManager.play(event.getGuild(), "output.mp3");
+        if (channelId.equals(TTS_CHANNEL_ID) && autoTTS && event.isFromGuild() && !message.isBlank()) {
+            var guild = event.getGuild();
+            TTS_POOL.submit(() -> {
+                try {
+                    if (AIc.ttsCall(message, "output")) {
+                        PlayerManager.get().play(guild, "output.mp3");
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    e.printStackTrace();
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                e.printStackTrace();
-            }
+            });
         }
 
         // Everything below responds to messages, so ignore bots (including ourselves) to prevent loops
@@ -129,12 +142,12 @@ public class respond extends ListenerAdapter {
 
         if (isDndChannel) {
             if (dnd && mentionsBot) {
-                continueStory(channel, msg);
+                runAsync(() -> continueStory(channel, msg));
             }
         } else if (mentionsBot) {
-            respondToMention(channel, msg, message);
+            runAsync(() -> respondToMention(channel, msg, message));
         } else if (replyingToBot) {
-            respondToReply(channel, msg, referenced, message);
+            runAsync(() -> respondToReply(channel, msg, referenced, message));
         }
 
         if (trivia && channelId.equals(triviaChannelID)) {
@@ -149,7 +162,7 @@ public class respond extends ListenerAdapter {
             int ran = (int) (Math.random() * 40);
             System.out.println(ran);
             if (ran == 5 && !mentionsBot && !replyingToBot && settingsDB.getState("randReply")) {
-                randomReply(channel, msg);
+                runAsync(() -> randomReply(channel, msg));
             }
 
             if (event.getAuthor().getName().equals("frankie4sd")) {
@@ -160,6 +173,17 @@ public class respond extends ListenerAdapter {
                 }
             }
         }
+    }
+
+    // Runs a task off the event thread and logs failures instead of losing them
+    private static void runAsync(Runnable task) {
+        AI_POOL.submit(() -> {
+            try {
+                task.run();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private void continueStory(MessageChannel channel, Message trigger) {
@@ -179,19 +203,24 @@ public class respond extends ListenerAdapter {
 
         String out = AIc.gptCall("Continue the story with one message, do not include \"EGCBOT:\" or any other names in that style. It must be under 2000 characters in length: " + ss, textModel);
 
-        uploadedImage = null;
-        File img = new File("image.png");
-        img.delete(); // so a failed generation can't reuse the previous image
+        // Unique file per request so it can't collide with /dalle or another story turn
+        String baseName = "story-" + UUID.randomUUID();
+        File img = new File(baseName + ".png");
+        FileUpload image = null;
         try {
-            AIc.dalleCall(AIc.gptCall("Turn this into a short pg dalle prompt: " + out, textModel), "image");
+            AIc.dalleCall(AIc.gptCall("Turn this into a short pg dalle prompt: " + out, textModel), baseName);
             if (img.exists()) {
-                uploadedImage = FileUpload.fromData(img, "image.png");
+                image = FileUpload.fromData(img, "image.png");
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.out.println(e.getMessage());
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+        uploadedImage = image;
 
-        sendLong(channel, out, uploadedImage);
+        sendLong(channel, out, image, img);
     }
 
     private void respondToMention(MessageChannel channel, Message msg, String message) {
@@ -264,15 +293,28 @@ public class respond extends ListenerAdapter {
     }
 
     private static void sendVision(MessageChannel channel, Message.Attachment image, String prompt) {
+        // Keep the real extension: visionCall builds the MIME type from it,
+        // so a JPEG saved as .png would be sent as image/png
+        String ext = image.getFileExtension();
+        if (ext == null || ext.isBlank()) {
+            ext = "png";
+        }
+
         File tmp;
         try {
-            tmp = File.createTempFile("vision", ".png"); // unique file so simultaneous requests don't overwrite each other
+            tmp = File.createTempFile("vision", "." + ext); // unique file so simultaneous requests don't overwrite each other
         } catch (IOException e) {
             e.printStackTrace();
             return;
         }
         image.getProxy().downloadToFile(tmp)
-                .thenAccept(file -> sendLong(channel, AIController.visionCall(prompt, file.getPath()), null))
+                .thenAccept(file -> {
+                    try {
+                        sendLong(channel, AIController.visionCall(prompt, file.getPath()), null);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e); // lambdas can't throw checked exceptions
+                    }
+                })
                 .whenComplete((v, t) -> {
                     if (t != null) {
                         t.printStackTrace();
@@ -281,21 +323,38 @@ public class respond extends ListenerAdapter {
                 });
     }
 
-    // Splits text into Discord-sized chunks; attaches the file (if any) to the last chunk
     private static void sendLong(MessageChannel channel, String text, FileUpload file) {
+        sendLong(channel, text, file, null);
+    }
+
+    // Splits text into Discord-sized chunks; attaches the file (if any) to the last chunk,
+    // then deletes cleanupFile (if given) once the send finishes
+    private static void sendLong(MessageChannel channel, String text, FileUpload file, File cleanupFile) {
+        Runnable cleanup = () -> {
+            if (cleanupFile != null) {
+                cleanupFile.delete();
+            }
+        };
+
         if (text == null || text.isBlank()) {
             if (file != null) {
-                channel.sendFiles(file).queue();
+                channel.sendFiles(file).queue(s -> cleanup.run(), f -> cleanup.run());
+            } else {
+                cleanup.run();
             }
             return;
         }
         List<String> parts = splitMessage(text);
         for (int i = 0; i < parts.size(); i++) {
             MessageCreateAction action = channel.sendMessage(parts.get(i));
-            if (i == parts.size() - 1 && file != null) {
-                action = action.addFiles(file);
+            if (i == parts.size() - 1) {
+                if (file != null) {
+                    action = action.addFiles(file);
+                }
+                action.queue(s -> cleanup.run(), f -> cleanup.run());
+            } else {
+                action.queue();
             }
-            action.queue();
         }
     }
 
