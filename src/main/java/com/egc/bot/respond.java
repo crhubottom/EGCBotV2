@@ -4,355 +4,317 @@ import com.egc.bot.audio.PlayerManager;
 import com.egc.bot.database.messageDB;
 import com.egc.bot.database.settingsDB;
 import com.egc.bot.events.countTracker;
-import io.github.stefanbratanov.jvm.openai.OpenAIException;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageHistory;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Random;
 
 import static com.egc.bot.Bot.*;
 
 public class respond extends ListenerAdapter {
+    private static final String COUNT_CHANNEL_ID = "1318277991398117457";
+    private static final String DND_CHANNEL_ID = "1268086672420245556";
+    private static final String TTS_CHANNEL_ID = "1207940576138371115";
+    private static final int MAX_MESSAGE_LENGTH = 2000;
+
     int count = 0;
     private static String answer = null;
     private static Boolean trivia = false;
     private static String triviaChannelID = null;
-    public static boolean dnd=false;
+    public static boolean dnd = false;
     public static FileUpload uploadedImage;
     public static StringBuilder story = new StringBuilder();
-    public static long id=0;
+    public static long id = 0;
     public static countTracker cT = new countTracker();
-    public static boolean secondPart=false;
+    public static boolean secondPart = false; // no longer used; kept in case other classes reference it
+
     public void trivia(String answer, String channelID) {
         respond.answer = answer;
         trivia = true;
         triviaChannelID = channelID;
     }
+
+    @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
-        //System.out.println(event.getMessage().getContentRaw());
-        String message = event.getMessage().getContentRaw();
-        //System.out.println(Objects.requireNonNull(event.getMember()).getOnlineStatus());
+        Message msg = event.getMessage();
+        String message = msg.getContentRaw();
+        MessageChannel channel = event.getChannel();
+        String channelId = channel.getId();
+        String selfId = event.getJDA().getSelfUser().getId();
+        String botMention = "<@" + selfId + ">";
+        boolean mentionsBot = message.contains(botMention) || message.contains("<@!" + selfId + ">");
+        boolean isDndChannel = channelId.equals(DND_CHANNEL_ID);
+        Member member = event.getMember();
+
         System.out.println(message);
-        if(event.getMember()!=null) {
+        if (member != null) {
             System.out.println("message received");
-            messageDB.addMessage(event.getMember().getIdLong());
+            messageDB.addMessage(member.getIdLong());
         }
 
-        if(event.getChannel().getId().equals("1318277991398117457")) {
-            if(!event.getAuthor().isBot()) {
-                if(cT.messageIn(event.getMessage().getContentRaw())!=-1){
-                    EmbedBuilder eb = new EmbedBuilder();
-                    eb.setTitle("Count Restarted");
-                    eb.setColor(Color.red);
-                    eb.setDescription("High Score: "+cT.messageIn(event.getMessage().getContentRaw()));
-                    event.getChannel().sendMessageEmbeds(eb.build()).queue();
-                }
+        // Counting channel
+        if (channelId.equals(COUNT_CHANNEL_ID) && !event.getAuthor().isBot()) {
+            int highScore = cT.messageIn(message); // call once; calling twice changes the tracker's state
+            if (highScore != -1) {
+                EmbedBuilder eb = new EmbedBuilder();
+                eb.setTitle("Count Restarted");
+                eb.setColor(Color.red);
+                eb.setDescription("High Score: " + highScore);
+                channel.sendMessageEmbeds(eb.build()).queue();
             }
         }
-        if(dnd){
-            if(event.getChannel().getId().equals("1268086672420245556")) {
-                if(event.getAuthor().getIdLong()!=id){
-                    if(id!=0) {
-                        story.append("----------------------------------------------------------------------------------------------------------").append("\n");
-                    }
-                    id=event.getAuthor().getIdLong();
-                }
-                if(event.getAuthor().isBot()&&!secondPart){
-                    story.append("DM").append(":    ").append(event.getMessage().getContentRaw()).append("\n");
 
-                }else {
-                    if(event.getMessage().getContentRaw().equals("<@1237574116328865873>")){
-                        story.append("The story continues. \n");
-                    }else {
-                        story.append(event.getMember().getNickname()).append(":    ").append(event.getMessage().getContentRaw()).append("\n");
-                    }
+        // D&D story log
+        if (dnd && isDndChannel) {
+            long authorId = event.getAuthor().getIdLong();
+            if (authorId != id) {
+                if (id != 0) {
+                    story.append("----------------------------------------------------------------------------------------------------------").append("\n");
                 }
-
+                id = authorId;
+            }
+            if (event.getAuthor().isBot()) {
+                story.append("DM").append(":    ").append(message).append("\n");
+            } else if (message.trim().equals(botMention)) {
+                story.append("The story continues. \n");
+            } else {
+                story.append(nameOf(msg)).append(":    ").append(message).append("\n");
             }
         }
-        if (!event.getAuthor().getId().equals(keys.get("BOT_ID"))) {
+
+        // Auto TTS
+        System.out.println(channelId);
+        if (channelId.equals(TTS_CHANNEL_ID) && autoTTS && event.isFromGuild()) {
             try {
-                inv.addUser(event.getMember().getIdLong());
+                if (AIc.ttsCall(message, "output")) {
+                    PlayerManager playerManager = PlayerManager.get();
+                    playerManager.play(event.getGuild(), "output.mp3");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                e.printStackTrace();
+            }
+        }
+
+        // Everything below responds to messages, so ignore bots (including ourselves) to prevent loops
+        if (event.getAuthor().isBot()) {
+            return;
+        }
+
+        if (member != null) {
+            try {
+                inv.addUser(member.getIdLong());
             } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-            if(event.getChannel().getId().equals("1268086672420245556")){
-                if(dnd&&message.contains("<@1237574116328865873>")){
-                    TextChannel tc = event.getChannel().asTextChannel();
-                    System.out.println(tc.getName());
-                    MessageHistory messagesHistory = tc.getHistoryBefore(tc.getLatestMessageId(), 25).complete();
-                    List<Message> messages = messagesHistory.getRetrievedHistory();
-                    StringBuilder ss = new StringBuilder();
-                    tc.getHistory().retrievePast(1).queue(msgs -> {
-                        System.out.println(msgs.get(0).getContentDisplay());
-                        if (!msgs.get(0).getAuthor().isBot() && !msgs.get(0).getContentDisplay().isEmpty()) {
-                            ss.append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
-                        }
-                    });
-                    for (int i = messages.size() - 1; i >= 0; i--) {
-                        if (!messages.get(i).getContentDisplay().isEmpty()) {
-                            ss.append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay() + "\n");
-                        }
-                    }
-                    System.out.println(ss);
-                    String out = AIc.gptCall("Continue the story with one message, do not include \"EGCBOT:\" or any other names in that style. It must be under 2000 characters in length: "+ss,textModel);
-                    try {
-                        AIc.dalleCall(AIc.gptCall("Turn this into a short pg dalle prompt: "+out,textModel),"image");
-                        java.io.File a=new File("image.png");
-                         uploadedImage= FileUpload.fromData(a, "image.png");
-                    }catch (OpenAIException e){
-                        System.out.println(e.getMessage());
-                    }
-                    if(out.length()>2000){
-                        String half2;
-                        String half1;
-                        half1=out.substring(0,out.length()/2);
-                        half2=out.substring(out.length()/2);
-                        tc.sendMessage(half1).queue();
-                        secondPart=true;
-                        tc.sendMessage(half2).addFiles(uploadedImage).queue();
-                        secondPart=!secondPart;
-                    }else {
-                        tc.sendMessage(out).addFiles(uploadedImage).queue();
-                    }
-                }
-            }
-
-
-        }
-        if(event.getMessage().getReferencedMessage() != null) {
-            if (event.getMessage().getReferencedMessage().getAuthor().equals(event.getJDA().getSelfUser())) {
-
-                TextChannel tc = event.getChannel().asTextChannel();
-                MessageHistory messagesHistory = tc.getHistoryBefore(event.getMessage().getReferencedMessage().getId(), 40).complete();
-                List<Message> messages = messagesHistory.getRetrievedHistory();
-                StringBuilder ss = new StringBuilder();
-                for (int i = messages.size() - 1; i >= 0; i--) {
-                    if (!messages.get(i).getContentDisplay().isEmpty()) {
-                        ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
-                       /*
-                        if(!messages.get(i).getAttachments().isEmpty()){
-                            for(int x=0;x<messages.get(i).getAttachments().size();x++){
-                                ss.append(" Attachments: ").append(x).append(": ");
-                                messages.get(i).getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
-                                        .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")));
-                            }
-                        }
-
-                        */
-                    }
-                }
-
-                tc.getHistory().retrievePast(1).queue(msgs -> {
-                    System.out.println(msgs.get(0).getContentDisplay());
-                    if (!msgs.get(0).getAuthor().isBot() && !msgs.get(0).getContentDisplay().isEmpty()) {
-                        //ss.append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
-                        ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
-                        if (msgs.get(0).getMember()!=null) {
-                            if (!msgs.get(0).getContentDisplay().isEmpty()) {
-                                ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
-                            }
-                            /*
-                            if (!msgs.get(0).getAttachments().isEmpty()) {
-                                for (int x = 0; x < msgs.get(0).getAttachments().size(); x++) {
-                                    ss.append(" Attachments: ").append(x).append(": ");
-                                    msgs.get(0).getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
-                                            .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")));
-                                }
-                            }
-
-                             */
-                        }
-                        //System.out.println("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: "+ss);
-                        System.out.println(ss);
-                        tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message: "+ss,textModel)).queue();
-                    }else{
-                        System.out.println("ELSE:\n\n"+ss);
-                        tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message: "+ss,textModel)).queue();
-                    }
-
-                });
+                e.printStackTrace();
             }
         }
 
+        Message referenced = msg.getReferencedMessage();
+        boolean replyingToBot = referenced != null && referenced.getAuthor().getId().equals(selfId);
 
-    System.out.println(event.getChannel().getId());
-    if(event.getChannel().getId().equals("1207940576138371115")){
-                if(autoTTS){
-                    try {
-                        if(AIc.ttsCall(message,"output")) {
-                            PlayerManager playerManager = PlayerManager.get();
-                            playerManager.play(event.getGuild(), "output.mp3");
-                        }
-                    } catch (IOException | InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
+        if (isDndChannel) {
+            if (dnd && mentionsBot) {
+                continueStory(channel, msg);
+            }
+        } else if (mentionsBot) {
+            respondToMention(channel, msg, message);
+        } else if (replyingToBot) {
+            respondToReply(channel, msg, referenced, message);
         }
 
-
-            if(message.contains("<@1237574116328865873>")&&!event.getChannel().getId().equals("1268086672420245556")){
-                TextChannel tc = event.getChannel().asTextChannel();
-                System.out.println(tc.getName());
-                if (!event.getMessage().getAttachments().isEmpty()) {
-                    System.out.println("has attachments");
-                    event.getMessage().getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
-                            .thenAccept(file -> event.getChannel().sendMessage(AIController.visionCall(message, "vision.png")).queue())
-                            .exceptionally(t ->
-                            { // handle failure
-                                t.printStackTrace();
-                                return null;
-                            });
-                    return;
-                }
-                if(event.getMessage().getReferencedMessage() != null) {
-                    if (!event.getMessage().getReferencedMessage().getAttachments().isEmpty()) {
-                        System.out.println("has attachments");
-                        event.getMessage().getReferencedMessage().getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
-                                .thenAccept(file -> event.getChannel().sendMessage(AIController.visionCall(message, "vision.png")).queue())
-                                .exceptionally(t ->
-                                { // handle failure
-                                    t.printStackTrace();
-                                    return null;
-                                });
-                        return;
-                    }
-
-                }
-                MessageHistory messagesHistory = tc.getHistoryBefore(tc.getLatestMessageId(), 40).complete();
-                List<Message> messages = messagesHistory.getRetrievedHistory();
-                StringBuilder ss = new StringBuilder();
-
-
-                for (int i = messages.size() - 1; i >= 0; i--) {
-                    if (messages.get(i).getMember()!=null) {
-                        if(!messages.get(i).getContentDisplay().isEmpty()) {
-                            ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
-                        }
-                        /*
-                        if(!messages.get(i).getAttachments().isEmpty()){
-                            if(messages.get(i).getContentDisplay().isEmpty()) {
-                                ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ");
-                            }
-                            for(int x=0;x<messages.get(i).getAttachments().size();x++){
-                                ss.append(" Images: ").append(x+1).append(": ");
-                                messages.get(i).getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
-                                        .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")))
-                                        .join();
-                            }
-                        }
-
-                         */
-                    }
-                }
-                    tc.getHistory().retrievePast(1).queue(msgs -> {
-                        System.out.println(msgs.get(0).getContentDisplay());
-                        if (msgs.get(0).getMember()!=null) {
-                            if(!msgs.get(0).getContentDisplay().isEmpty()) {
-                                ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
-                            }
-                            /*
-                            if(!msgs.get(0).getAttachments().isEmpty()){
-                                for(int x=0;x<msgs.get(0).getAttachments().size();x++){
-                                    ss.append(" Images: ").append(x+1).append(": ");
-                                    event.getMessage().getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
-                                            .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")))
-                                            .join();
-                                }
-                            }
-
-                             */
-                                //System.out.println("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: "+ss);
-                                System.out.println(ss);
-                                tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message. The Images: section describes the images the user sent: "+ss,textModel)).queue();
-                            }else{
-                                System.out.println("ELSE:\n\n"+ss);
-                                tc.sendMessage(AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: "+message+". Do not mention your name. Dont ask questions. Here is the context to that message. The Images: section describes the images the user sent: "+ss,textModel)).queue();
-                            }
-
-                    });
+        if (trivia && channelId.equals(triviaChannelID)) {
+            if (answer != null && answer.trim().equalsIgnoreCase(message.trim())) {
+                trivia = false;
+                msg.addReaction(Emoji.fromUnicode("U+2705")).queue();
+                msg.reply("Correct!").queue();
+            } else {
+                msg.addReaction(Emoji.fromUnicode("U+274C")).queue();
             }
-            if (trivia && event.getChannel().getId().equals(triviaChannelID)) {
-                if (Objects.equals(answer, event.getMessage().getContentRaw())) {
-                    trivia = false;
-                    event.getMessage().addReaction(Emoji.fromUnicode("U+2705")).queue();
-                    event.getMessage().reply("Correct!").queue();
-                } else {
-                    event.getMessage().addReaction(Emoji.fromUnicode("U+274C")).queue();
-                }
-            } else if(!event.getChannel().getId().equals("1268086672420245556")){
+        } else if (!isDndChannel) {
+            int ran = (int) (Math.random() * 40);
+            System.out.println(ran);
+            if (ran == 5 && !mentionsBot && !replyingToBot && settingsDB.getState("randReply")) {
+                randomReply(channel, msg);
+            }
 
-                int ran = (int) (Math.random() * 40);
-                System.out.println(ran);
-                if ((ran == 5 && settingsDB.getState("randReply"))) {
-                    TextChannel tc = event.getChannel().asTextChannel();
-                    System.out.println(tc.getName());
-                    MessageHistory messagesHistory = tc.getHistoryBefore(tc.getLatestMessageId(), 40).complete();
-                    List<Message> messages = messagesHistory.getRetrievedHistory();
-                    StringBuilder ss = new StringBuilder();
-                    for (int i = messages.size() - 1; i >= 0; i--) {
-                        if (messages.get(i).getMember()!=null) {
-                            if(!messages.get(i).getContentDisplay().isEmpty()) {
-                                ss.append("\n").append(i + 1).append(": ").append(messages.get(i).getMember().getNickname()).append(": ").append(messages.get(i).getContentDisplay());
-                            }
-                            /*
-                            if(!messages.get(i).getAttachments().isEmpty()){
-                                for(int x=0;x<messages.get(i).getAttachments().size();x++){
-                                    ss.append(" Attachments: ").append(x).append(": ");
-                                    event.getMessage().getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
-                                            .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")));
-                                }
-                            }
-
-                             */
-                        }
-                    }
-                    tc.getHistory().retrievePast(1).queue(msgs -> {
-                            System.out.println(msgs.get(0).getContentDisplay());
-                            if (msgs.get(0).getMember()!=null) {
-                                if(!msgs.get(0).getContentDisplay().isEmpty()) {
-                                    ss.append("\n(Newest Message) 0: ").append(msgs.get(0).getMember().getNickname()).append(": ").append(msgs.get(0).getContentDisplay()).append("\n");
-                                }
-                                /*
-                                if(!msgs.get(0).getAttachments().isEmpty()){
-                                    for(int x=0;x<msgs.get(0).getAttachments().size();x++){
-                                        ss.append(" Attachments: ").append(x).append(": ");
-                                        event.getMessage().getAttachments().get(0).getProxy().downloadToFile(new File("vision.png"))
-                                                .thenAccept(file -> ss.append(AIController.visionCall("Describe the image in 100 words or less.", "vision.png")));
-                                    }
-                                }
-
-                                 */
-                                    //System.out.println("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: "+ss);
-                                    tc.sendMessage(AIc.gptCall("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: \n"+ss,textModel)).queue();
-                                }else{
-                                    tc.sendMessage(AIc.gptCall("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: \n"+ss,textModel)).queue();
-                            }
-
-                        });
-                    if (event.getMessage().getAuthor().getName().equals("frankie4sd")) {
-                        count++;
-                        int rand_int1 = rand.nextInt(30);
-                        if (rand_int1 == 3 && settingsDB.getState("frankie")) {
-                            event.getMessage().reply("https://tenor.com/view/shh-gif-27680056").queue(); // call queue
-                        }
-                    }
+            if (event.getAuthor().getName().equals("frankie4sd")) {
+                count++;
+                int rand_int1 = rand.nextInt(30);
+                if (rand_int1 == 3 && settingsDB.getState("frankie")) {
+                    msg.reply("https://tenor.com/view/shh-gif-27680056").queue();
                 }
             }
         }
     }
 
+    private void continueStory(MessageChannel channel, Message trigger) {
+        System.out.println(channel.getName());
+        List<Message> history = channel.getHistoryBefore(trigger.getId(), 25).complete().getRetrievedHistory();
+        StringBuilder ss = new StringBuilder();
+        for (int i = history.size() - 1; i >= 0; i--) {
+            Message m = history.get(i);
+            if (!m.getContentDisplay().isEmpty()) {
+                ss.append(nameOf(m)).append(": ").append(m.getContentDisplay()).append("\n");
+            }
+        }
+        if (!trigger.getContentDisplay().isEmpty()) {
+            ss.append(nameOf(trigger)).append(": ").append(trigger.getContentDisplay()).append("\n");
+        }
+        System.out.println(ss);
 
+        String out = AIc.gptCall("Continue the story with one message, do not include \"EGCBOT:\" or any other names in that style. It must be under 2000 characters in length: " + ss, textModel);
+
+        uploadedImage = null;
+        File img = new File("image.png");
+        img.delete(); // so a failed generation can't reuse the previous image
+        try {
+            AIc.dalleCall(AIc.gptCall("Turn this into a short pg dalle prompt: " + out, textModel), "image");
+            if (img.exists()) {
+                uploadedImage = FileUpload.fromData(img, "image.png");
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        sendLong(channel, out, uploadedImage);
+    }
+
+    private void respondToMention(MessageChannel channel, Message msg, String message) {
+        System.out.println(channel.getName());
+
+        Message.Attachment image = firstImage(msg);
+        if (image == null && msg.getReferencedMessage() != null) {
+            image = firstImage(msg.getReferencedMessage());
+        }
+        if (image != null) {
+            System.out.println("has attachments");
+            sendVision(channel, image, message);
+            return;
+        }
+
+        StringBuilder ss = buildHistory(channel, msg.getId(), 40);
+        appendNewest(ss, msg);
+        System.out.println(ss);
+        sendLong(channel, AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: " + message + ". Do not mention your name. Dont ask questions. Here is the context to that message: " + ss, textModel), null);
+    }
+
+    private void respondToReply(MessageChannel channel, Message msg, Message referenced, String message) {
+        StringBuilder ss = buildHistory(channel, referenced.getId(), 40);
+        if (!referenced.getContentDisplay().isEmpty()) {
+            ss.append("\n(Message being replied to): ").append(nameOf(referenced)).append(": ").append(referenced.getContentDisplay());
+        }
+        appendNewest(ss, msg);
+        System.out.println(ss);
+        sendLong(channel, AIc.gptCall("Respond to this message as yourself, EGCBot, with a short response: " + message + ". Do not mention your name. Dont ask questions. Here is the context to that message: " + ss, textModel), null);
+    }
+
+    private void randomReply(MessageChannel channel, Message msg) {
+        System.out.println(channel.getName());
+        StringBuilder ss = buildHistory(channel, msg.getId(), 40);
+        appendNewest(ss, msg);
+        sendLong(channel, AIc.gptCall("Jump into this conversation as yourself, EGCBot, with a short response. Act like you were always part of the conversation. Do not mention your name. Dont ask questions: \n" + ss, textModel), null);
+    }
+
+    private static StringBuilder buildHistory(MessageChannel channel, String beforeId, int limit) {
+        List<Message> history = channel.getHistoryBefore(beforeId, limit).complete().getRetrievedHistory();
+        StringBuilder ss = new StringBuilder();
+        for (int i = history.size() - 1; i >= 0; i--) {
+            Message m = history.get(i);
+            if (!m.getContentDisplay().isEmpty()) {
+                ss.append("\n").append(i + 1).append(": ").append(nameOf(m)).append(": ").append(m.getContentDisplay());
+            }
+        }
+        return ss;
+    }
+
+    private static void appendNewest(StringBuilder ss, Message m) {
+        if (!m.getContentDisplay().isEmpty()) {
+            ss.append("\n(Newest Message) 0: ").append(nameOf(m)).append(": ").append(m.getContentDisplay()).append("\n");
+        }
+    }
+
+    // Nickname if set, otherwise display/user name; works for webhooks and users with no nickname
+    private static String nameOf(Message m) {
+        Member mem = m.getMember();
+        return mem != null ? mem.getEffectiveName() : m.getAuthor().getName();
+    }
+
+    private static Message.Attachment firstImage(Message m) {
+        for (Message.Attachment a : m.getAttachments()) {
+            if (a.isImage()) {
+                return a;
+            }
+        }
+        return null;
+    }
+
+    private static void sendVision(MessageChannel channel, Message.Attachment image, String prompt) {
+        File tmp;
+        try {
+            tmp = File.createTempFile("vision", ".png"); // unique file so simultaneous requests don't overwrite each other
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+        image.getProxy().downloadToFile(tmp)
+                .thenAccept(file -> sendLong(channel, AIController.visionCall(prompt, file.getPath()), null))
+                .whenComplete((v, t) -> {
+                    if (t != null) {
+                        t.printStackTrace();
+                    }
+                    tmp.delete();
+                });
+    }
+
+    // Splits text into Discord-sized chunks; attaches the file (if any) to the last chunk
+    private static void sendLong(MessageChannel channel, String text, FileUpload file) {
+        if (text == null || text.isBlank()) {
+            if (file != null) {
+                channel.sendFiles(file).queue();
+            }
+            return;
+        }
+        List<String> parts = splitMessage(text);
+        for (int i = 0; i < parts.size(); i++) {
+            MessageCreateAction action = channel.sendMessage(parts.get(i));
+            if (i == parts.size() - 1 && file != null) {
+                action = action.addFiles(file);
+            }
+            action.queue();
+        }
+    }
+
+    private static List<String> splitMessage(String text) {
+        List<String> parts = new ArrayList<>();
+        while (text.length() > MAX_MESSAGE_LENGTH) {
+            int cut = text.lastIndexOf('\n', MAX_MESSAGE_LENGTH);
+            if (cut <= 0) {
+                cut = text.lastIndexOf(' ', MAX_MESSAGE_LENGTH);
+            }
+            if (cut <= 0) {
+                cut = MAX_MESSAGE_LENGTH;
+            }
+            parts.add(text.substring(0, cut));
+            text = text.substring(cut).stripLeading();
+        }
+        if (!text.isEmpty()) {
+            parts.add(text);
+        }
+        return parts;
+    }
+}

@@ -1,395 +1,250 @@
 package com.egc.bot.events;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
+import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
 
-import java.awt.*;
+import java.awt.Color;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Objects;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.egc.bot.Bot.*;
 
 public class blackjackController {
-    public static ArrayList<String> deck = new ArrayList<>(
-            Arrays.asList("A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A",
-                    "2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2",
-                    "3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3",
-                    "4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4",
-                    "5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5",
-                    "6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6",
-                    "7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7",
-                    "8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8",
-                    "9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9",
-                    "10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10",
-                    "J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J",
-                    "Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q",
-                    "K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K")
-    );
-    public static ArrayList<String> playerHand =new ArrayList<>();
-    public static ArrayList<String> dealerHand =new ArrayList<>();
-    public static int gold;
+    private static final String[] RANKS = {"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"};
+    private static final int DECKS = 7; // 7 decks = 28 of each rank, same as before
+    public static final long BLACKJACK_CHANNEL_ID = 1269464838472597577L;
+
+    public static boolean isBlackjackChannel(long channelID) {
+        return channelID == BLACKJACK_CHANNEL_ID;
+    }
+
+    // Instance fields (were static) so two games can't overwrite each other's hands
+    public ArrayList<String> deck = new ArrayList<>();
+    public ArrayList<String> playerHand = new ArrayList<>();
+    public ArrayList<String> dealerHand = new ArrayList<>();
+    public int gold;
     public Long id;
-    public boolean keepDrawing=true;
-    public boolean dealer=false;
-    public EmbedBuilder start(int gold,Long id) throws SQLException {
+    public boolean keepDrawing = true;
+    public boolean dealer = false;
+    private boolean finished = false;
+    private long startedAt = 0;
+    private static final long ABANDON_AFTER_MS = 5 * 60 * 1000; // a game nobody touches for 5 minutes stops blocking new ones
 
-        Collections.shuffle(deck);
-        System.out.println(deck.size());
-        playerHand.add(deck.get(0));
-        deck.remove(0);
-        dealerHand.add(deck.get(0));
-        deck.remove(0);
-        if(playerHand.contains("A")){
-            while(Objects.equals(deck.get(0), "A")){
-                Collections.shuffle(deck);
-            }
-        }
-        playerHand.add(deck.get(0));
-        deck.remove(0);
-        if(dealerHand.contains("A")){
-            while(Objects.equals(deck.get(0), "A")){
-                Collections.shuffle(deck);
-            }
-        }
-        dealerHand.add(deck.get(0));
-        deck.remove(0);
-    blackjackController.gold = gold;
-         this.id=id;
-        StringBuilder ss=new StringBuilder();
-        ss.append("Dealer:\n").append(dealerHand.get(0)).append(" *\n\n").append("Player:\n");
-        for (String s : playerHand) {
-            ss.append(s).append(" ");
-        }
-        ss.append("= ").append(calculateNum(playerHand));
-        ss.append("\n\n Stand or Hit?");
-        EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle("Blackjack    ("+gold+" gold)", null);
-        eb.setColor(Color.white);
-        eb.setDescription(ss);
-        inv.DeleteItem(id,"Gold",gold);
-        return eb;
+    // True while someone is mid-hand (dealt, not finished, and not abandoned)
+    public synchronized boolean isInProgress() {
+        return !playerHand.isEmpty()
+                && !finished
+                && System.currentTimeMillis() - startedAt < ABANDON_AFTER_MS;
     }
-    public void hit(Long messageID,Long channelID){
-        if(playerHand.contains("A")){
-            while(Objects.equals(deck.get(0), "A")){
-                Collections.shuffle(deck);
-            }
-        }
-        playerHand.add(deck.get(0));
-        deck.remove(0);
-        String pl1=calculateNum(playerHand);
-        if(!Objects.equals(pl1, "bust")) {
-            StringBuilder ss = new StringBuilder();
-            int playerNum = 0;
-            int dealerNum = 0;
-            ss.append("Dealer:\n").append(dealerHand.get(0)).append(" *\n\n").append("Player:\n");
-            for (String s : playerHand) {
-                ss.append(s).append(" ");
-            }
-            ss.append("= ").append(pl1);
-            ss.append("\n\n Stand or Hit?");
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setTitle("Blackjack    (" + gold + " gold)", null);
-            eb.setColor(Color.white);
-            eb.setDescription(ss);
-            client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).queue();
-        }else{
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setTitle("Blackjack    (" + gold + " gold)", null);
-            eb.setColor(Color.red);
-            eb.setDescription("Bust!");
-            client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
 
-        }
-
+    public blackjackController() {
+        reset();
     }
-    public void stand(Long messageID,Long channelID) throws InterruptedException, SQLException {
-        StringBuilder ss = new StringBuilder();
 
-        ss.append("Dealer:\n");
-        for (String s : dealerHand) {
-            ss.append(s).append(" ");
+    // Returns null if another game is still in progress
+    public synchronized EmbedBuilder start(int gold, Long id) throws SQLException {
+        if (isInProgress()) {
+            return null;
         }
-        ss.append("\n\nPlayer:\n");
-        for (String s : playerHand) {
-            ss.append(s).append(" ");
+        reset(); // always start from a fresh deck and empty hands
+        this.gold = gold;
+        this.id = id;
+        startedAt = System.currentTimeMillis();
+
+        playerHand.add(draw());
+        dealerHand.add(draw());
+        playerHand.add(draw());
+        dealerHand.add(draw());
+
+        inv.DeleteItem(id, "Gold", gold);
+
+        String board = "Dealer:\n" + dealerHand.get(0) + " *\n\nPlayer:\n" + handText(playerHand) + "\n\n Stand or Hit?";
+        return embed(Color.white, board);
+    }
+
+    public synchronized void hit(Long messageID, Long channelID) {
+        if (finished || !isBlackjackChannel(channelID)) {
+            return; // ignore clicks after the game is over or outside the blackjack channel
         }
-        ss.append("= ").append(calculateNum(playerHand));
+        playerHand.add(draw());
+        int total = bestTotal(playerHand);
+
+        if (total > 21) {
+            finished = true;
+            String board = "Dealer:\n" + dealerHand.get(0) + " *\n\nPlayer:\n" + handText(playerHand) + "\n\nBust!";
+            edit(channelID, messageID, embed(Color.red, board), true, 0);
+        } else if (total == 21) {
+            // Nothing to gain by hitting on 21, so stand automatically
+            try {
+                stand(messageID, channelID);
+            } catch (SQLException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        } else {
+            String board = "Dealer:\n" + dealerHand.get(0) + " *\n\nPlayer:\n" + handText(playerHand) + "\n\n Stand or Hit?";
+            edit(channelID, messageID, embed(Color.white, board), false, 0);
+        }
+    }
+
+    // Still declares InterruptedException so existing callers that catch it keep compiling
+    public synchronized void stand(Long messageID, Long channelID) throws InterruptedException, SQLException {
+        if (finished || !isBlackjackChannel(channelID)) {
+            return; // prevents double payouts, and ignores games outside the blackjack channel
+        }
+        finished = true;
+        dealer = true;
+
+        int delay = 0;
+        edit(channelID, messageID, embed(Color.white, board()), false, delay);
+
+        // Dealer draws to 17 (stands on all 17s, including soft 17)
+        while (bestTotal(dealerHand) < 17) {
+            dealerHand.add(draw());
+            delay += 3;
+            edit(channelID, messageID, embed(Color.white, board()), false, delay);
+        }
+        keepDrawing = false;
+
+        int player = bestTotal(playerHand);
+        int dealerTotal = bestTotal(dealerHand);
+
+        String result;
+        Color color;
+        int payout;
+        if (dealerTotal > 21) {
+            result = "Dealer Busts!\nYou Win!";
+            color = Color.green;
+            payout = gold * 2;
+        } else if (player > dealerTotal) {
+            result = "You Win!";
+            color = Color.green;
+            payout = gold * 2;
+        } else if (player < dealerTotal) {
+            result = "Dealer Wins!";
+            color = Color.red;
+            payout = 0;
+        } else {
+            result = "Draw!";
+            color = Color.white;
+            payout = gold;
+        }
+
+        if (payout > 0) {
+            inv.AddItem(id, "Gold", payout);
+        }
+
+        delay += 5;
+        edit(channelID, messageID, embed(color, board() + "\n\n" + result), true, delay);
+    }
+
+    // Kept for compatibility: returns "bust", a plain total, or "low/high" for a soft hand
+    public String calculateNum(ArrayList<String> hand) {
+        int[] value = handValue(hand);
+        int total = value[0];
+        boolean soft = value[1] > 0;
+        if (total > 21) {
+            return "bust";
+        }
+        if (soft) {
+            return (total - 10) + "/" + total;
+        }
+        return String.valueOf(total);
+    }
+
+    public synchronized void reset() {
+        deck = newDeck();
+        playerHand = new ArrayList<>();
+        dealerHand = new ArrayList<>();
+        keepDrawing = true;
+        dealer = false;
+        finished = false;
+        startedAt = 0;
+    }
+
+    // ---------- helpers ----------
+
+    private static ArrayList<String> newDeck() {
+        ArrayList<String> d = new ArrayList<>();
+        for (int i = 0; i < 4 * DECKS; i++) {
+            Collections.addAll(d, RANKS);
+        }
+        Collections.shuffle(d);
+        return d;
+    }
+
+    private String draw() {
+        if (deck.isEmpty()) {
+            deck = newDeck();
+        }
+        return deck.remove(0);
+    }
+
+    // Returns {best total, number of aces still counted as 11}
+    private static int[] handValue(List<String> hand) {
+        int total = 0;
+        int aces = 0;
+        for (String card : hand) {
+            switch (card) {
+                case "A":
+                    total += 11;
+                    aces++;
+                    break;
+                case "J", "Q", "K", "10":
+                    total += 10;
+                    break;
+                default:
+                    total += Integer.parseInt(card);
+            }
+        }
+        while (total > 21 && aces > 0) {
+            total -= 10;
+            aces--;
+        }
+        return new int[]{total, aces};
+    }
+
+    private static int bestTotal(List<String> hand) {
+        return handValue(hand)[0];
+    }
+
+    private String handText(ArrayList<String> hand) {
+        return String.join(" ", hand) + " = " + calculateNum(hand);
+    }
+
+    private String board() {
+        return "Dealer:\n" + handText(dealerHand) + "\n\nPlayer:\n" + handText(playerHand);
+    }
+
+    private EmbedBuilder embed(Color color, String description) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Blackjack    (" + gold + " gold)", null);
-        eb.setColor(Color.white);
-        eb.setDescription(ss);
-        client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).queue();
-        System.out.println("Player End Hand:");
-        String pl=calculateNum(playerHand);
-        dealer=true;
-        System.out.println("Dealer Original Hand:");
-        calculateNum(dealerHand);
-        while(keepDrawing){
-            System.out.println("New Card: "+deck.get(0));
-            Thread.sleep(3000);
-            if(dealerHand.contains("A")){
-                while(Objects.equals(deck.get(0), "A")){
-                    Collections.shuffle(deck);
-                }
-            }
-            dealerHand.add(deck.get(0));
-            deck.remove(0);
-             ss = new StringBuilder();
-            ss.append("Dealer:\n");
-            for (String s : dealerHand) {
-                ss.append(s).append(" ");
-            }
-            System.out.println("Dealer Draws:");
-            ss.append("= ").append(calculateNum(dealerHand));
-            ss.append("\n\nPlayer:\n");
-            for (String s : playerHand) {
-                ss.append(s).append(" ");
-            }
-            ss.append("= ").append(pl);
-            eb = new EmbedBuilder();
-            eb.setTitle("Blackjack    (" + gold + " gold)", null);
-            eb.setColor(Color.white);
-            eb.setDescription(ss);
-            client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).queue();
-        }
-        Thread.sleep(5000);
-        if(Objects.equals(calculateNum(dealerHand), "bust")){
-             eb = new EmbedBuilder();
-            eb.setTitle("Blackjack    (" + gold + " gold)", null);
-            eb.setColor(Color.green);
-            eb.setDescription("Dealer Busts!\nYou Win!");
-            inv.AddItem(id,"Gold",gold*2);
-            client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-        }else{
-            if(calculateNum(dealerHand).contains("/")&&calculateNum(playerHand).contains("/")) {
-                int player1;
-                int player2;
-                int dealer1;
-                int dealer2;
-                dealer1 = Integer.parseInt(calculateNum(dealerHand).substring(0, calculateNum(dealerHand).indexOf("/")));
-                dealer2 = Integer.parseInt(calculateNum(dealerHand).substring(calculateNum(dealerHand).indexOf("/")+1));
-                player1 = Integer.parseInt(calculateNum(playerHand).substring(0, calculateNum(playerHand).indexOf("/")));
-                player2 = Integer.parseInt(calculateNum(playerHand).substring(calculateNum(playerHand).indexOf("/")+1));
-                int dealer=0;
-                int player=0;
-                if (dealer1 > dealer2 && dealer1 <= 21) {
-                    dealer = dealer1;
-                }
-                if (dealer2 > dealer1 && dealer2 <= 21) {
-                    dealer = dealer2;
-                }
-                if (player1 > player2 && player1 <= 21) {
-                    player = player1;
-                }
-                if (player2 > player1 && player2 <= 21) {
-                    player = player2;
-                }
-                if (dealer > player) {
-                    eb = new EmbedBuilder();
-                    eb.setTitle("Blackjack    (" + gold + " gold)", null);
-                    eb.setColor(Color.red);
-                    eb.setDescription("Dealer Wins!");
-                    client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-                }else if(player>dealer){
-                    eb = new EmbedBuilder();
-                    eb.setTitle("Blackjack    (" + gold + " gold)", null);
-                    eb.setColor(Color.green);
-                    eb.setDescription("You Win!");
-                    inv.AddItem(id,"Gold",gold*2);
-                    client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-                }else{
-                    eb = new EmbedBuilder();
-                    eb.setTitle("Blackjack    (" + gold + " gold)", null);
-                    eb.setColor(Color.white);
-                    eb.setDescription("Draw!");
-                    inv.AddItem(id,"Gold",gold);
-                    client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-                }
-
-            }else if(calculateNum(dealerHand).contains("/")) {
-                int dealer1;
-                int dealer2;
-                dealer1 = Integer.parseInt(calculateNum(dealerHand).substring(0, calculateNum(dealerHand).indexOf("/")));
-                dealer2 = Integer.parseInt(calculateNum(dealerHand).substring(calculateNum(dealerHand).indexOf("/")+1));
-                int dealer=0;
-                if (dealer1 > dealer2 && dealer1 <= 21) {
-                    dealer = dealer1;
-                }
-                if (dealer2 > dealer1 && dealer2 <= 21) {
-                    dealer = dealer2;
-                }
-                if(dealer > Integer.parseInt(calculateNum(playerHand))){
-                    eb = new EmbedBuilder();
-                    eb.setTitle("Blackjack    (" + gold + " gold)", null);
-                    eb.setColor(Color.red);
-                    eb.setDescription("Dealer Wins!");
-                    client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-                }else if(dealer < Integer.parseInt(calculateNum(playerHand))){
-                    eb = new EmbedBuilder();
-                    eb.setTitle("Blackjack    (" + gold + " gold)", null);
-                    eb.setColor(Color.green);
-                    eb.setDescription("You Win!");
-                    inv.AddItem(id,"Gold",gold*2);
-                    client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-                }else{
-                    eb = new EmbedBuilder();
-                    eb.setTitle("Blackjack    (" + gold + " gold)", null);
-                    eb.setColor(Color.white);
-                    eb.setDescription("Draw!");
-                    inv.AddItem(id,"Gold",gold);
-                    client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-                }
-            }else if(calculateNum(playerHand).contains("/")){
-                int player1;
-                int player2;
-                player1 = Integer.parseInt(calculateNum(playerHand).substring(0, calculateNum(playerHand).indexOf("/")));
-                player2 = Integer.parseInt(calculateNum(playerHand).substring(calculateNum(playerHand).indexOf("/")+1));
-                int player=0;
-                if (player1 > player2 && player1 <= 21) {
-                    player = player1;
-                }
-                if (player2 > player1 && player2 <= 21) {
-                    player = player2;
-                }
-                if(player < Integer.parseInt(calculateNum(dealerHand))){
-                    eb = new EmbedBuilder();
-                    eb.setTitle("Blackjack    (" + gold + " gold)", null);
-                    eb.setColor(Color.red);
-                    eb.setDescription("Dealer Wins!");
-                    client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-                }else if(player > Integer.parseInt(calculateNum(dealerHand))){
-                    eb = new EmbedBuilder();
-                    eb.setTitle("Blackjack    (" + gold + " gold)", null);
-                    eb.setColor(Color.green);
-                    eb.setDescription("You Win!");
-                    inv.AddItem(id,"Gold",gold*2);
-                    client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-                }else{
-                    eb = new EmbedBuilder();
-                    eb.setTitle("Blackjack    (" + gold + " gold)", null);
-                    eb.setColor(Color.white);
-                    eb.setDescription("Draw!");
-                    inv.AddItem(id,"Gold",gold);
-                    client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-                }
-            }else{
-                if(Integer.parseInt(calculateNum(dealerHand))==Integer.parseInt(calculateNum(playerHand))){
-                    eb = new EmbedBuilder();
-                    eb.setTitle("Blackjack    (" + gold + " gold)", null);
-                    eb.setColor(Color.white);
-                    eb.setDescription("Draw!");
-                    inv.AddItem(id,"Gold",gold);
-                    client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-                }else if(Integer.parseInt(calculateNum(dealerHand))>Integer.parseInt(calculateNum(playerHand))){
-                    eb = new EmbedBuilder();
-                    eb.setTitle("Blackjack    (" + gold + " gold)", null);
-                    eb.setColor(Color.red);
-                    eb.setDescription("Dealer Wins!");
-
-                    client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-                }else{
-                    eb = new EmbedBuilder();
-                    eb.setTitle("Blackjack    (" + gold + " gold)", null);
-                    eb.setColor(Color.green);
-                    eb.setDescription("You Win!");
-                    inv.AddItem(id,"Gold",gold*2);
-                    client.getGuildById(guildID).getTextChannelById(channelID).editMessageEmbedsById(messageID, eb.build()).setComponents().queue();
-                }
-            }
-        }
-
+        eb.setColor(color);
+        eb.setDescription(description);
+        return eb;
     }
-    public String calculateNum(ArrayList<String> s){
-        int ace11=0;
-        int ace1=0;
-        boolean ace=false;
-        for (String card : s) {
-            System.out.println(ace11+" "+ace1+" "+card);
-            switch(card){
-                case "A":
-                    ace1++;
-                    ace11+=11;
-                    ace=true;
-                    break;
-                case "J","K","Q","10":
-                    ace1+=10;
-                    ace11+=10;
-                    break;
-                case "2":
-                    ace1+=2;
-                    ace11+=2;
-                    break;
-                case "3":
-                    ace1+=3;
-                    ace11+=3;
-                    break;
-                case "4":
-                    ace1+=4;
-                    ace11+=4;
-                    break;
-                case "5":
-                    ace1+=5;
-                    ace11+=5;
-                    break;
-                case "6":
-                    ace1+=6;
-                    ace11+=6;
-                    break;
-                case "7":
-                    ace1+=7;
-                    ace11+=7;
-                    break;
-                case "8":
-                    ace1+=8;
-                    ace11+=8;
-                    break;
-                case "9":
-                    ace1+=9;
-                    ace11+=9;
-                    break;
-            }
 
+    // Uses queueAfter instead of Thread.sleep so the bot isn't frozen while the dealer draws
+    private void edit(Long channelID, Long messageID, EmbedBuilder eb, boolean removeButtons, int delaySeconds) {
+        if (!isBlackjackChannel(channelID)) {
+            return;
         }
-        System.out.println("Total: "+ace1+" "+ace11);
-        if(((ace1>=17&&ace11>=17)||ace1==21||ace11==21)&&dealer){
-            System.out.println("stop drawing");
-            keepDrawing=false;
+        GuildMessageChannel channel = client.getChannelById(GuildMessageChannel.class, channelID);
+        if (channel == null) {
+            System.out.println("Blackjack channel not found: " + channelID);
+            return;
         }
-        if(ace){
-            if(ace1>21&&ace11>21){
-                return "bust";
-            }else {
-                return ace1 + "/" + ace11;
-            }
-        }else if(ace1>21){
-            return "bust";
-        }else{
-            return String.valueOf(ace1);
-
+        MessageEditAction action = channel.editMessageEmbedsById(messageID, eb.build());
+        if (removeButtons) {
+            action = action.setComponents();
         }
-    }
-    public void reset(){
-        deck = new ArrayList<>(
-                Arrays.asList("A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A","A",
-                        "2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2",
-                        "3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3",
-                        "4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4","4",
-                        "5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5","5",
-                        "6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6","6",
-                        "7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7","7",
-                        "8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8","8",
-                        "9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9","9",
-                        "10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10","10",
-                        "J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J","J",
-                        "Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q","Q",
-                        "K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K","K")
-        );
-        playerHand =new ArrayList<>();
-        dealerHand =new ArrayList<>();
-        keepDrawing=true;
-        dealer=false;
+        if (delaySeconds > 0) {
+            action.queueAfter(delaySeconds, TimeUnit.SECONDS);
+        } else {
+            action.queue();
+        }
     }
 }
