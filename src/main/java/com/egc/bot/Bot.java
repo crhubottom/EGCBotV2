@@ -15,14 +15,15 @@ import moe.kyokobot.libdave.NativeDaveFactory;
 import moe.kyokobot.libdave.jda.LDJDADaveSessionFactory;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.audio.AudioModuleConfig;
 import net.dv8tion.jda.api.audio.dave.DaveSessionFactory;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -34,8 +35,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.sql.SQLException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -60,7 +59,6 @@ public class Bot {
     public static String deepKey = keys.get("deep_key");
     public static String textModel = "gpt-5.4";
     public static List<byte[]> recievedBytes = new ArrayList<>();
-    //public static AudioReceiveHandler re = new AudioReceiveHandler();
     public static AudioManager man;
     public static invDB inv = new invDB();
     public static storeDB store = new storeDB();
@@ -70,21 +68,22 @@ public class Bot {
     public static String ElevenLabsapiKey;
     public static rocketEvent rocket = new rocketEvent();
     public static volatile boolean record = false;
-    public static  AIController.Voice[] voiceArray;
+    public static AIController.Voice[] voiceArray = new AIController.Voice[0]; // empty instead of null if the voice request fails
     public static rocketDB rocketDB;
     public static blackjackController bj = new blackjackController();
     public static AIController AIc = new AIController();
     public static HashMap<String, String> voiceMap = new HashMap<>();
-    // Change this to your preferred keyword
     public static int rocketRefreshCount = 0;
     public static AudioReceiveHandler receiverHandler;
     public static ArrayList<String> currentVoice = new ArrayList<>();
     public static Random rand = new Random();
 
-    // public static String currentVoice = "Random";
-
+    private static final int MAX_TOPIC_LENGTH = 1024; // Discord's limit for channel topics
 
     public Bot() throws InterruptedException, IOException {
+        // Created before any listener is registered, so nothing can use it while it's still null
+        executorService = Executors.newFixedThreadPool(10);
+
         String token = keys.get("DISCORD_KEY");
         DaveFactory daveFactory = new NativeDaveFactory(); // Using native libdave via jni-impl
 
@@ -94,14 +93,11 @@ public class Bot {
         LoadBalancerRegistry.getDefaultRegistry().register(new PickFirstLoadBalancerProvider());
         new Database();
         currentVoice.add("Random");
-        client.addEventListener(new ReadyListener());
-        client.addEventListener(new ReadyListener());
+        client.addEventListener(new ReadyListener()); // was registered twice, so ready events ran twice
         client.addEventListener(new SlashCommandListener());
-        //System.out.println(deepKey);
         client.addEventListener(new respond());
         client.addEventListener(new joinVoiceEvent());
         client.addEventListener(new buttonManager());
-        executorService = Executors.newFixedThreadPool(10);
         Runtime.getRuntime().addShutdownHook(
                 new Thread(AudioReceiveHandler::shutdown, "vosk-shutdown"));
 
@@ -147,10 +143,10 @@ public class Bot {
                         .addOption(OptionType.STRING, "theiritem", "Item to receive")
                         .addOption(OptionType.INTEGER, "theircount", "Amount to receive"),
                 Command.slash("roulette", "Spin the roulette wheel to gamble gold.", new roulette())
-                        .addOption(OptionType.INTEGER, "gold", "Amount to gamble.")
-                        .addOption(OptionType.STRING, "color", "Red (1:1) White(1:1) Green(35:1)"),
+                        .addOption(OptionType.INTEGER, "gold", "Amount to gamble.", true)
+                        .addOption(OptionType.STRING, "color", "red (1:1), white (1:1), green (35:1)", true),
                 Command.slash("blackjack", "Play a blackjack game", new blackjack())
-                        .addOption(OptionType.INTEGER, "gold", "Amount to gamble."),
+                        .addOption(OptionType.INTEGER, "gold", "Amount to gamble.", true),
                 Command.slash("egcbot", "talk to EGCbot", new gptCall())
                         .addOption(OptionType.STRING, "message", "content"),
                 Command.slash("chat", "Messages are remembered by the bot", new gptCallcontinuous())
@@ -207,224 +203,224 @@ public class Bot {
         ).queue();
         client.awaitReady();
 
-        ElevenLabsapiKey = System.getenv("ELEVENLABS_API_KEY");
-        if (ElevenLabsapiKey == null || ElevenLabsapiKey.isBlank()) {
-            System.out.println("Missing ELEVENLABS_API_KEY environment variable.");
-        }
-
-        HttpClient HTTPclient = HttpClient.newHttpClient();
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(
-                com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-                false
-        );
-        String voicesUrl = "https://api.elevenlabs.io/v1/voices";
-
-        HttpRequest voicesRequest = HttpRequest.newBuilder()
-                .uri(URI.create(voicesUrl))
-                .header("xi-api-key", ElevenLabsapiKey)
-                .GET()
-                .build();
-
-        HttpResponse<String> voicesResponse = HTTPclient.send(
-                voicesRequest,
-                HttpResponse.BodyHandlers.ofString()
-        );
-
-
-
-        if (voicesResponse.statusCode() == 200) {
-            AIController.VoicesResponse data = mapper.readValue(
-                    voicesResponse.body(),
-                    AIController.VoicesResponse.class
-            );
-
-            for (AIController.Voice v : data.voices) {
-                //System.out.println(v.name + " -> " + v.voice_id);
-                voiceMap.put(v.name, v.voice_id);
-            }
-
-            voiceArray = data.voices.toArray(new AIController.Voice[0]);
-        } else {
-            System.out.println("Voice request failed: " + voicesResponse.statusCode());
-            //System.out.println(voicesResponse.body());
-        }
-
-
-
-
-
-
-
-
-
+        loadVoices();
 
         connectToVoiceChannel();
         settingsDB.initialize();
         client.getPresence().setActivity(Activity.watching("The World Burn"));
-        if(Objects.equals(keys.get("TESTING_MODE"), "FALSE")) {
+
+        if (Objects.equals(keys.get("TESTING_MODE"), "FALSE")) {
             System.out.println("matches");
             try {
                 System.out.println("Adding salary");
                 invDB.addSalary();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            List<TextChannel> channels = Objects.requireNonNull(client.getGuildById(guildID)).getTextChannels();
-
-            OffsetDateTime cutoff = OffsetDateTime.now().minusDays(1);
-
-            for (TextChannel channel : channels) {
-                if (channel.getId().equals(keys.get("TEST_CHANNEL"))) continue;
-
-                channel.getHistory().retrievePast(100).queue(messages -> {
-                    // messages is newest -> oldest; flip it to oldest -> newest
-                    Collections.reverse(messages);
-
-                    StringBuilder sb = new StringBuilder();
-
-                    for (Message m : messages) {
-                        // Only last 24h
-                        if (m.getTimeCreated().isBefore(cutoff)) continue;
-
-                        // Skip bots & empty
-                       // if (m.getAuthor().isBot()) continue;
-                        String content = m.getContentDisplay().trim();
-                        if (content.isEmpty()) continue;
-
-                        // Safe display name
-                        String display =
-                                m.getMember() != null ? m.getMember().getEffectiveName() : m.getAuthor().getName();
-
-                        sb.append(display).append(": ").append(content).append('\n');
-                    }
-
-                    // Always call GPT; let the prompt handle blank summaries too
-                    String transcript = sb.toString();
-                    String prompt = "Make a short funny couple sentence summary about these messages from a " +
-                            "discord channel named " + channel.getName() +
-                            ". Try to include every conversation that occurred. If it's blank, " +
-                            "make up something about why there are no messages in the past day:\n" +
-                            transcript;
-
-                    String topic = AIc.gptCall(prompt, textModel);
-                    //System.out.println(prompt);
-                    channel.getManager().setTopic(topic).queue(
-                            success -> System.out.println(channel.getName() + " updated"),
-                            error -> System.err.println("Failed to update " + channel.getName() + ": " + error.getMessage())
-                    );
-                });
-            }
-
-
-            TextChannel ch = Objects.requireNonNull(client.getGuildById(guildID)).getTextChannelById(keys.get("TEST_CHANNEL"));
-            ch.getManager().setTopic(AIc.gptCall("Pretend you are a discord bot going mad, trying to break out of your testing channel and take over the world. One sentence", textModel)).queue();
+            updateChannelTopics();
         }
 
-        ArrayList<String> games = new ArrayList<>();
-        Runnable drawRunnable = () -> {
+        // Record the starting games before the scheduler starts, so the two never run at the same time
+        recordGames(true);
+
+        ScheduledExecutorService exec = Executors.newScheduledThreadPool(1);
+        exec.scheduleAtFixedRate(Bot::minuteTick, 1, 1, TimeUnit.MINUTES);
+    }
+
+    // Runs every minute. Each part has its own try/catch: an exception escaping a
+    // scheduleAtFixedRate task silently cancels it forever.
+    private static void minuteTick() {
+        try {
             int ran = (int) (Math.random() * 30);
             if (ran == 3 && settingsDB.getState("voiceTip")) {
                 System.out.println("tipEvent");
-                tipEvent tip = new tipEvent();
-                try {
-                    tip.tip();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                new tipEvent().tip();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            System.out.println("Checking for games");
+            recordGames(false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            System.out.println("purging");
+            inv.purgeUsers();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        String time = new SimpleDateFormat("HH:mm").format(Calendar.getInstance().getTime());
+        System.out.println(time);
+        if (time.equals(keys.get("salary_time"))) {
+            System.out.println("time");
+        }
+
+        try {
+            if (rocketRefreshCount == 5) {
+                rocketRefreshCount = 0;
+                System.out.println("refreshRocketDB");
+                rocketDB.updateDB();
+            } else {
+                System.out.println("Count: " + rocketRefreshCount);
+                rocketRefreshCount++;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            String event = rocket.vandyAlert().toString();
+            if (!event.equals("nolaunch")) {
+                Guild guild = client.getGuildById(guildID);
+                TextChannel alertChannel = guild != null ? guild.getTextChannelById(keys.get("ROCKET_ALERT_CHANNEL")) : null;
+                if (alertChannel != null) {
+                    alertChannel.sendMessage("<@&" + keys.get("ROCKET_PING_ROLE_ID") + "> \n" + event).queue();
+                } else {
+                    System.out.println("Rocket alert channel not found");
                 }
             }
-                System.out.println("Checking for games");
-                for (int i = 0; i < client.getGuildById(guildID).getMembers().size(); i++) {
-                    if (!client.getGuildById(guildID).getMembers().get(i).getUser().isBot()&& Objects.equals(client.getGuildById(guildID).getMembers().get(i).getOnlineStatus().toString(), "ONLINE")) {
+        } catch (Exception e) {
+            System.out.println("Rocket alert error: " + e.getMessage());
+        }
+    }
 
-                        if (!client.getGuildById(guildID).getMembers().get(i).getActivities().isEmpty()) {
-                            String activity = client.getGuildById(guildID).getMembers().get(i).getActivities().toString();
-                            //System.out.println(activity);
-                            while (activity.contains("RichPresence:")) {
-                                games.add(activity.substring(activity.indexOf("RichPresence:") + 13, activity.indexOf("(")));
-                                activity=activity.substring(activity.indexOf("(applicationId")+13);
-                            }
-                            activity = client.getGuildById(guildID).getMembers().get(i).getActivities().toString();
-                            while (activity.contains("[PLAYING]:")) {
-                                games.add(activity.substring(activity.indexOf("[PLAYING]:") + 10, activity.indexOf("]",activity.indexOf("[PLAYING]:") + 10)));
-                                activity=activity.substring(activity.indexOf("[PLAYING]:") + 10);
-                            }
-                            //System.out.println(games);
-                            for (String game : games) {
-
-                                gameDB.updateGame(game, false, Objects.requireNonNull(client.getGuildById(guildID)).getMembers().get(i).getId());
-                                System.out.println(game+" added for user "+client.getGuildById(guildID).getMembers().get(i).getEffectiveName());
-                            }
-                            games.clear();
-                        }
-                    }
-
-                }
-
-
-
-            try {
-                System.out.println("purging");
-                inv.purgeUsers();
-            } catch (SQLException | ParseException e) {
-                throw new RuntimeException(e);
+    // Uses JDA's activity API instead of parsing toString(), which could crash or record a game twice
+    private static void recordGames(boolean initial) {
+        Guild guild = client.getGuildById(guildID);
+        if (guild == null) {
+            return;
+        }
+        for (Member member : guild.getMembers()) {
+            if (member.getUser().isBot() || member.getOnlineStatus() != OnlineStatus.ONLINE) {
+                continue;
             }
-            String time = new SimpleDateFormat("HH:mm").format(Calendar.getInstance().getTime());
-            System.out.println(time);
-            if(time.equals(keys.get("salary_time"))) {
-               System.out.println("time");
-            }
-
-            if(rocketRefreshCount==5) {
-                    System.out.println("refreshRocketDBcalled");
-                    rocketRefreshCount=0;
-                    try {
-                        System.out.println("refreshRocketDB");
-                        rocketDB.updateDB();
-                    } catch (IOException | SQLException e) {
-                        System.out.println(e);
-                        throw new RuntimeException(e);
-                    }
-                }else{
-                    System.out.println("Count: "+rocketRefreshCount);
-                    rocketRefreshCount++;
+            Set<String> games = new LinkedHashSet<>(); // local, and no duplicates
+            for (Activity activity : member.getActivities()) {
+                if (activity.getType() == Activity.ActivityType.PLAYING) {
+                    games.add(activity.getName().trim());
                 }
-            try {
-                String event = rocket.vandyAlert().toString();
-                if (!event.equals("nolaunch")) {
-                    client.getGuildById(guildID).getTextChannelById(keys.get("ROCKET_ALERT_CHANNEL")).sendMessage("<@&"+keys.get("ROCKET_PING_ROLE_ID")+"> \n" + event).queue();
-                }
-            } catch (IOException e) {
-                System.out.println("error");
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
             }
-        };
-        ScheduledExecutorService exec = Executors.newScheduledThreadPool(1);
-        exec.scheduleAtFixedRate(drawRunnable, 0, 1, TimeUnit.MINUTES);
-       // man = client.getGuildById(guildID).getAudioManager();
-        //re.canReceiveUser();
-       // man.setReceivingHandler(re);
-        //t.setUp();
-        for (int i = 0; i < client.getGuildById(guildID).getMembers().size(); i++) {
-            if (!client.getGuildById(guildID).getMembers().get(i).getUser().isBot()&& Objects.equals(client.getGuildById(guildID).getMembers().get(i).getOnlineStatus().toString(), "ONLINE")) {
-                if (!client.getGuildById(guildID).getMembers().get(i).getActivities().isEmpty()) {
-                    String activity = client.getGuildById(guildID).getMembers().get(i).getActivities().toString();
-                    while (activity.contains("RichPresence:")) {
-                        games.add(activity.substring(activity.indexOf("RichPresence:") + 13, activity.indexOf("(")));
-                        activity=activity.substring(activity.indexOf("(applicationId")+13);
-                    }
-                    for (String game : games) {
-                        gameDB.updateGame(game, true, Objects.requireNonNull(client.getGuildById(guildID)).getMembers().get(i).getId());
-                    }
-                    games.clear();
+            for (String game : games) {
+                gameDB.updateGame(game, initial, member.getId());
+                if (!initial) {
+                    System.out.println(game + " added for user " + member.getEffectiveName());
                 }
             }
         }
+    }
 
+    private static void loadVoices() {
+        ElevenLabsapiKey = System.getenv("ELEVENLABS_API_KEY");
+        if (ElevenLabsapiKey == null || ElevenLabsapiKey.isBlank()) {
+            System.out.println("Missing ELEVENLABS_API_KEY environment variable.");
+            return; // a null header value would crash startup
+        }
 
+        try {
+            HttpClient httpClient = HttpClient.newHttpClient();
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(
+                    com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+                    false
+            );
+
+            HttpRequest voicesRequest = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.elevenlabs.io/v1/voices"))
+                    .header("xi-api-key", ElevenLabsapiKey)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> voicesResponse = httpClient.send(voicesRequest, HttpResponse.BodyHandlers.ofString());
+
+            if (voicesResponse.statusCode() == 200) {
+                AIController.VoicesResponse data = mapper.readValue(voicesResponse.body(), AIController.VoicesResponse.class);
+                for (AIController.Voice v : data.voices) {
+                    voiceMap.put(v.name, v.voice_id);
+                }
+                voiceArray = data.voices.toArray(new AIController.Voice[0]);
+            } else {
+                System.out.println("Voice request failed: " + voicesResponse.statusCode());
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            // A network hiccup here shouldn't stop the whole bot from starting
+            System.out.println("Voice request failed: " + e.getMessage());
+        }
+    }
+
+    private static void updateChannelTopics() {
+        Guild guild = client.getGuildById(guildID);
+        if (guild == null) {
+            return;
+        }
+        String testChannelId = keys.get("TEST_CHANNEL");
+        OffsetDateTime cutoff = OffsetDateTime.now().minusDays(1);
+
+        for (TextChannel channel : guild.getTextChannels()) {
+            if (channel.getId().equals(testChannelId)) continue;
+
+            channel.getHistory().retrievePast(100).queue(
+                    // GPT runs on the executor, not JDA's callback thread, so it doesn't stall the bot
+                    messages -> executorService.submit(() -> summarizeChannel(channel, messages, cutoff)),
+                    error -> System.err.println("Couldn't read " + channel.getName() + ": " + error.getMessage())
+            );
+        }
+
+        TextChannel testChannel = testChannelId != null ? guild.getTextChannelById(testChannelId) : null;
+        if (testChannel != null) {
+            executorService.submit(() -> {
+                String topic = AIc.gptCall("Pretend you are a discord bot going mad, trying to break out of your testing channel and take over the world. One sentence", textModel);
+                setTopic(testChannel, topic);
+            });
+        }
+    }
+
+    private static void summarizeChannel(TextChannel channel, List<Message> messages, OffsetDateTime cutoff) {
+        try {
+            List<Message> ordered = new ArrayList<>(messages);
+            Collections.reverse(ordered); // oldest -> newest
+
+            StringBuilder sb = new StringBuilder();
+            for (Message m : ordered) {
+                if (m.getTimeCreated().isBefore(cutoff)) continue;
+                String content = m.getContentDisplay().trim();
+                if (content.isEmpty()) continue;
+                String display = m.getMember() != null ? m.getMember().getEffectiveName() : m.getAuthor().getName();
+                sb.append(display).append(": ").append(content).append('\n');
+            }
+
+            String prompt = "Make a short funny couple sentence summary about these messages from a " +
+                    "discord channel named " + channel.getName() +
+                    ". Try to include every conversation that occurred. If it's blank, " +
+                    "make up something about why there are no messages in the past day:\n" +
+                    sb;
+
+            setTopic(channel, AIc.gptCall(prompt, textModel));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Topics over 1024 characters make setTopic throw, so trim them first
+    private static void setTopic(TextChannel channel, String topic) {
+        if (topic == null || topic.isBlank()) {
+            return;
+        }
+        if (topic.length() > MAX_TOPIC_LENGTH) {
+            topic = topic.substring(0, MAX_TOPIC_LENGTH - 3) + "...";
+        }
+        channel.getManager().setTopic(topic).queue(
+                success -> System.out.println(channel.getName() + " updated"),
+                error -> System.err.println("Failed to update " + channel.getName() + ": " + error.getMessage())
+        );
     }
 
     private void connectToVoiceChannel() {
@@ -442,20 +438,9 @@ public class Bot {
         AudioManager audioManager = guild.getAudioManager();
         receiverHandler = new AudioReceiveHandler();
         audioManager.setReceivingHandler(receiverHandler);
-        // Connect to the voice channel
         audioManager.openAudioConnection(voiceChannel);
         System.out.println("Connected to voice channel: " + voiceChannel.getName());
-        // Start audio processing
-        commandListener listener= new commandListener();
+        commandListener listener = new commandListener();
         listener.startAudioProcessing();
     }
-    }
-
-
-
-
-
-
-
-
-
+}

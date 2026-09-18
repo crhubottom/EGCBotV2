@@ -1,84 +1,143 @@
 package com.egc.bot;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Icon;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Objects;
 
 import static com.egc.bot.Bot.*;
 
 public class buttonManager extends ListenerAdapter {
-    public void onButtonInteraction(ButtonInteractionEvent event) {
-        if (Objects.equals(event.getButton().getCustomId(), "acceptIcon")){
-            Icon icon= null;
-            try {
-                icon = Icon.from(new File("icon.png"));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            Objects.requireNonNull(client.getGuildById(guildID)).getManager().setIcon(icon).queue();
-            event.deferEdit().queue();
-        }
-        //System.out.println("Button Press: "+receiverID+": "+client.getGuildById(guildID).getMemberById(receiverID).getNickname());
+    // Only one trade button press can be processed at a time, so a trade can't run twice
+    private static final Object TRADE_LOCK = new Object();
 
-        if (Objects.equals(event.getButton().getCustomId(), "acceptTrade")&&event.getMember().getIdLong()==receiverID){
-            System.out.println("Accept: "+receiverID+": "+client.getGuildById(guildID).getMemberById(receiverID).getNickname());
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setTitle( "Trade Accepted.", null);
-            eb.setColor(Color.red);
-            //eb.setColor(new Color(0xF40C0C));
-            //eb.setColor(new Color(255, 0, 54));
-            MessageEmbed embed = eb.build();
-            event.editMessageEmbeds(embed).setComponents().queue();
-            try {
-                inv.trade(traderID,receiverID,traderItem,receiverItem,traderCount,receiverCount);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        }else if(Objects.equals(event.getButton().getCustomId(), "acceptTrade")&&event.getMember().getIdLong()!=receiverID){
-            event.deferEdit().queue();
+    @Override
+    public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
+        String buttonId = event.getButton().getCustomId();
+        if (buttonId == null) {
+            return;
         }
-        if (Objects.equals(event.getButton().getCustomId(), "denyTrade")&&event.getMember().getIdLong()==receiverID){
-            System.out.println("Deny: "+receiverID+": "+client.getGuildById(guildID).getMemberById(receiverID).getNickname());
+        long clicker = event.getUser().getIdLong();
 
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setTitle( "Trade Denied.", null);
-            eb.setColor(Color.red);
-            //eb.setColor(new Color(0xF40C0C));
-            //eb.setColor(new Color(255, 0, 54));
-            MessageEmbed embed = eb.build();
-            event.editMessageEmbeds(embed).setComponents().queue();
-        }else if(Objects.equals(event.getButton().getCustomId(), "denyTrade")&&event.getMember().getIdLong()!=receiverID){
-            event.deferEdit().queue();
+        switch (buttonId) {
+            case "acceptIcon" -> acceptIcon(event);
+            case "acceptTrade" -> acceptTrade(event, clicker);
+            case "denyTrade" -> denyTrade(event, clicker);
+            case "hit" -> hit(event, clicker);
+            case "stand" -> stand(event, clicker);
+            default -> { }
         }
-
-        if (Objects.equals(event.getButton().getCustomId(), "hit")&&event.getMember().getIdLong()==blackjackID){
-            event.deferEdit().queue();
-            bj.hit(event.getMessage().getIdLong(),event.getChannelIdLong());
-
-        }else if(Objects.equals(event.getButton().getCustomId(), "hit")&&event.getMember().getIdLong()!=blackjackID){
-            event.deferEdit().queue();
-        }
-        if (Objects.equals(event.getButton().getCustomId(), "stand")&&event.getMember().getIdLong()==blackjackID) {
-            try {
-                event.deferEdit().queue();
-                bj.stand(event.getMessage().getIdLong(),event.getChannelIdLong());
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        }else if(Objects.equals(event.getButton().getCustomId(), "stand")&&event.getMember().getIdLong()!=blackjackID){
-            event.deferEdit().queue();
-        }
-
     }
 
+    private void acceptIcon(ButtonInteractionEvent event) {
+        Member member = event.getMember();
+        if (member == null || !member.hasPermission(Permission.MANAGE_SERVER)) {
+            privateReply(event, "You need the Manage Server permission to change the icon.");
+            return;
+        }
+
+        Guild guild = client.getGuildById(guildID);
+        if (guild == null) {
+            privateReply(event, "I couldn't find the server.");
+            return;
+        }
+
+        Icon icon;
+        try {
+            icon = Icon.from(new File("icon.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+            privateReply(event, "I couldn't read the new icon file.");
+            return;
+        }
+
+        guild.getManager().setIcon(icon).queue(
+                success -> System.out.println("Server icon updated"),
+                error -> System.out.println("Icon update failed: " + error.getMessage()));
+
+        // Remove the button so the icon can't be re-applied by clicking again
+        event.editComponents().queue();
+    }
+
+    private void acceptTrade(ButtonInteractionEvent event, long clicker) {
+        synchronized (TRADE_LOCK) {
+            if (receiverID == 0L || clicker != receiverID) {
+                privateReply(event, "This trade isn't for you, or it's no longer open.");
+                return;
+            }
+
+            System.out.println("Accept: " + receiverID);
+            try {
+                inv.trade(traderID, receiverID, traderItem, receiverItem, traderCount, receiverCount);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                receiverID = 0L;
+                event.editMessageEmbeds(embed("Trade Failed.", Color.red)).setComponents().queue();
+                return;
+            }
+
+            receiverID = 0L; // close the trade so it can't be accepted twice
+            event.editMessageEmbeds(embed("Trade Accepted.", Color.green)).setComponents().queue();
+        }
+    }
+
+    private void denyTrade(ButtonInteractionEvent event, long clicker) {
+        synchronized (TRADE_LOCK) {
+            if (receiverID == 0L || clicker != receiverID) {
+                privateReply(event, "This trade isn't for you, or it's no longer open.");
+                return;
+            }
+
+            System.out.println("Deny: " + receiverID);
+            receiverID = 0L;
+            event.editMessageEmbeds(embed("Trade Denied.", Color.red)).setComponents().queue();
+        }
+    }
+
+    private void hit(ButtonInteractionEvent event, long clicker) {
+        if (clicker != blackjackID) {
+            privateReply(event, "This isn't your game.");
+            return;
+        }
+        event.deferEdit().queue();
+        bj.hit(event.getMessage().getIdLong(), event.getChannelIdLong());
+    }
+
+    private void stand(ButtonInteractionEvent event, long clicker) {
+        if (clicker != blackjackID) {
+            privateReply(event, "This isn't your game.");
+            return;
+        }
+        event.deferEdit().queue();
+        try {
+            bj.stand(event.getMessage().getIdLong(), event.getChannelIdLong());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            e.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Only the person who clicked sees this
+    private static void privateReply(ButtonInteractionEvent event, String text) {
+        event.reply(text).setEphemeral(true).queue();
+    }
+
+    private static MessageEmbed embed(String title, Color color) {
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setTitle(title, null);
+        eb.setColor(color);
+        return eb.build();
+    }
 }
